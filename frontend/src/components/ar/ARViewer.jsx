@@ -60,6 +60,9 @@ export default function ARViewer() {
   if (window.AFRAME.components['interactive-rotation']) return;
 
   window.AFRAME.registerComponent('interactive-rotation', {
+    schema: {
+      enabled: { type: 'boolean', default: true }
+    },
     init: function () {
       const el = this.el;
       const obj = el.object3D;
@@ -74,6 +77,7 @@ export default function ARViewer() {
       };
 
       const onDown = (x, y) => {
+        if (!this.data.enabled) return;
         this.dragging = true;
         this.startX = x;
         this.startY = y;
@@ -81,7 +85,7 @@ export default function ARViewer() {
       };
 
       const onMove = (x, y) => {
-        if (!this.dragging) return;
+        if (!this.dragging || !this.data.enabled) return;
 
         let deltaX = x - this.startX;
         let deltaY = y - this.startY;
@@ -102,7 +106,10 @@ export default function ARViewer() {
 };
 
 
-    const onUp = () => (this.dragging = false);
+    const onUp = () => {
+      if (!this.data.enabled) return;
+      this.dragging = false;
+    };
 
     const attachListeners = (canvas) => {
   // Mouse
@@ -133,34 +140,34 @@ export default function ARViewer() {
   });
 }, [arLoaded]);
 
-useEffect(() => {
-  if (!arLoaded || !window.AFRAME) return;
+// useEffect(() => {
+//   if (!arLoaded || !window.AFRAME) return;
 
-  // prevent double registration
-  if (window.AFRAME.components["position-lock"]) return;
+//   // prevent double registration
+//   if (window.AFRAME.components["position-lock"]) return;
 
-  window.AFRAME.registerComponent("position-lock", {
-    schema: {
-      x: { type: "number", default: 0 },
-      y: { type: "number", default: 0 },
-      z: { type: "number", default: -3 }
-    },
+//   window.AFRAME.registerComponent("position-lock", {
+//     schema: {
+//       x: { type: "number", default: 0 },
+//       y: { type: "number", default: 0 },
+//       z: { type: "number", default: -3 }
+//     },
 
-    init: function () {
-      // same logic as interactive-rotation: store fixed position
-      this.fixedPosition = new THREE.Vector3(
-        this.data.x,
-        this.data.y,
-        this.data.z
-      );
-    },
+//     init: function () {
+//       // same logic as interactive-rotation: store fixed position
+//       this.fixedPosition = new THREE.Vector3(
+//         this.data.x,
+//         this.data.y,
+//         this.data.z
+//       );
+//     },
 
-    tick: function () {
-      // same line you used inside interactive-rotation
-      this.el.object3D.position.copy(this.fixedPosition);
-    }
-  });
-}, [arLoaded]);
+//     tick: function () {
+//       // same line you used inside interactive-rotation
+//       this.el.object3D.position.copy(this.fixedPosition);
+//     }
+//   });
+// }, [arLoaded]);
 
 
  useEffect(() => {
@@ -347,7 +354,7 @@ useEffect(() => {
             position="0 0 -2"
             scale="0.65 0.65 0.65"
             animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 5000"
-            interactive-rotation
+            interactive-rotation="enabled: true"
           />
         );
       case '360_video':
@@ -357,6 +364,7 @@ useEffect(() => {
             width={4 * videoAspect}
             height="4.7"
             material={`shader: flat; src: ${pv || '#fallbackVideo'}`}
+            interactive-rotation="enabled: false" 
             ></a-plane>
         );
       case '2d_image':
@@ -367,7 +375,7 @@ useEffect(() => {
             width="2.5"
             height="2.5"
             scale="1 1 1"
-            position-lock="0 0 -3"
+            interactive-rotation="enabled: false" 
           />
         );
       default:
