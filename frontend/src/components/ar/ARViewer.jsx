@@ -66,17 +66,18 @@ export default function ARViewer() {
     init: function () {
       const el = this.el;
       const obj = el.object3D;
+      const sceneEl = el.sceneEl;
+      
       this.dragging = false;
       this.startX = 0;
       this.startY = 0;
-
-      this.fixedPosition = obj.position.clone();
 
       const stopAutoRotation = () => {
         if (el.hasAttribute('animation__spin')) el.removeAttribute('animation__spin');
       };
 
       const onDown = (x, y) => {
+        if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', {enabled: false});
         if (!this.data.enabled) return;
         this.dragging = true;
         this.startX = x;
@@ -107,23 +108,51 @@ export default function ARViewer() {
 
 
     const onUp = () => {
+      if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', {enabled: true});
       if (!this.data.enabled) return;
       this.dragging = false;
     };
 
     const attachListeners = (canvas) => {
-  // Mouse
-  canvas.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); onDown(e.clientX, e.clientY); }, { passive: false });
-  canvas.addEventListener('mousemove', (e) => { e.preventDefault(); e.stopPropagation(); onMove(e.clientX, e.clientY); }, { passive: false });
-  canvas.addEventListener('mouseup', (e) => { e.preventDefault(); e.stopPropagation(); onUp(); }, { passive: false });
-  canvas.addEventListener('mouseleave', (e) => { e.preventDefault(); e.stopPropagation(); onUp(); }, { passive: false });
+      // --- Mouse Listeners ---
+      const handleMouseDown = (e) => {
+        e.preventDefault();
+        onDown(e.clientX, e.clientY);
+      };
+      const handleMouseMove = (e) => {
+        e.preventDefault();
+        onMove(e.clientX, e.clientY);
+      };
+      const handleMouseUp = (e) => {
+        e.preventDefault();
+        onUp();
+      };
 
-  // Touch
-  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); onDown(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
-  canvas.addEventListener('touchmove', (e) => { e.preventDefault(); e.stopPropagation(); onMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
-  canvas.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); onUp(); }, { passive: false });
-};
+      canvas.addEventListener('mousedown', handleMouseDown);
+      canvas.addEventListener('mousemove', handleMouseMove);
+      canvas.addEventListener('mouseup', handleMouseUp);
+      canvas.addEventListener('mouseleave', handleMouseUp); // Use mouseup handler for leave
 
+      // --- Touch Listeners ---
+      const handleTouchStart = (e) => {
+        // Prevent default touch actions like scrolling or zooming
+        e.preventDefault();
+        onDown(e.touches[0].clientX, e.touches[0].clientY);
+      };
+      const handleTouchMove = (e) => {
+        e.preventDefault();
+        onMove(e.touches[0].clientX, e.touches[0].clientY);
+      };
+      const handleTouchEnd = (e) => {
+        e.preventDefault();
+        onUp();
+      };
+
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+      canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+    };
 
       // Ensure the A-Frame canvas exists before attaching
       if (el.sceneEl.canvas) {
@@ -134,9 +163,7 @@ export default function ARViewer() {
         });
       }
     },
-    tick: function () {
-    this.el.object3D.position.copy(this.fixedPosition);
-  }
+    tick: function () {} // Position is now handled by the parent container
   });
 }, [arLoaded]);
 
@@ -348,14 +375,15 @@ export default function ARViewer() {
     switch (food_item.preview_type) {
       case '3d_model':
         return (
-          <a-entity
-            id="interactive-model"
-            gltf-model={pv || 'https://cdn.aframe.io/examples/ar/models/shiba/scene.gltf'}
-            position="0 0 -2"
-            scale="0.65 0.65 0.65"
-            animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 5000"
-            interactive-rotation="enabled: true"
-          />
+          <a-entity position="0 0 -2">
+            <a-entity
+              id="interactive-model"
+              gltf-model={pv || 'https://cdn.aframe.io/examples/ar/models/shiba/scene.gltf'}
+              scale="0.65 0.65 0.65"
+              animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 5000"
+              interactive-rotation="enabled: true"
+            />
+          </a-entity>
         );
       case '360_video':
         return (
@@ -371,7 +399,6 @@ export default function ARViewer() {
         return (
           <a-image
             src={pv || food_item.image_url}
-            position="0 0 -2"
             width="2.5"
             height="2.5"
             scale="1 1 1"
@@ -381,7 +408,6 @@ export default function ARViewer() {
       default:
         return (
           <a-box
-            position="0 0 -2"
             rotation="0 45 0"
             width="1"
             height="1"
@@ -454,7 +480,7 @@ export default function ARViewer() {
 
           {/* Camera with content directly attached */}
           <a-entity camera look-controls position="0 1.6 0">
-            <a-entity id="content-container" position="0 0 -3">
+            <a-entity id="content-container" position="0 0 -2">
               {getPreviewContent()}
               
               {/* Floating text */}
