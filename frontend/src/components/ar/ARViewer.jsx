@@ -401,7 +401,7 @@ export default function ARViewer() {
             src={pv || food_item.image_url}
             width="2.5"
             height="2.5"
-            scale="1 1 1"
+            scale="0.5 0.5 0.5"
             interactive-rotation="enabled: false" 
           />
         );
