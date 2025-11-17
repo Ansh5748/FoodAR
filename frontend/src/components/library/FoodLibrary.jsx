@@ -180,7 +180,6 @@ export default function FoodLibrary() {
     setPage(nextPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">

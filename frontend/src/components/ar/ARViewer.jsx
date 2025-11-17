@@ -41,7 +41,6 @@ export default function ARViewer() {
   const [quantity, setQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState('');
   const sceneRef = useRef(null);
-  
   const [videoAspect, setVideoAspect] = useState(1);
   const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -219,9 +218,18 @@ export default function ARViewer() {
       const response = await axios.get(`${API}/food-items/${foodItemId}`, { headers: { Authorization: null } });
       const fetchedFoodData = response.data;
       setFoodData(fetchedFoodData);
-      const file = fetchedFoodData.food_item.preview_url || fetchedFoodData.library_item?.file_url;
-      setPreviewUrl(file);
+      
+      const mapping = fetchedFoodData.food_item_mapping;
+      const lib = fetchedFoodData.library_item;
+      if (mapping?.model_glb_url || fetchedFoodData.food_item.preview_type === '3d_model') {
+          const fi = fetchedFoodData.food_item;
 
+            const glbUrl = mapping?.model_glb_url || fi?.model_glb_url || lib?.model_glb_url || null;
+        setPreviewUrl(glbUrl);
+      } else {
+        const file = fetchedFoodData.food_item.preview_url || fetchedFoodData.library_item;
+        setPreviewUrl(file);
+      }
 
       if (fetchedFoodData && fetchedFoodData.restaurant) {
         const restaurantId = fetchedFoodData.restaurant.id;
@@ -378,8 +386,8 @@ export default function ARViewer() {
           <a-entity position="0 0 -2">
             <a-entity
               id="interactive-model"
-              gltf-model={pv || 'https://cdn.aframe.io/examples/ar/models/shiba/scene.gltf'}
-              scale="0.65 0.65 0.65"
+              gltf-model={pv}
+              scale="0.025 0.025 0.025"
               animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 5000"
               interactive-rotation="enabled: true"
             />
@@ -470,7 +478,7 @@ export default function ARViewer() {
           <a-assets>
             <video
               id="fallbackVideo"
-              src="https://cdn.aframe.io/360-image-gallery-boilerplate/audio/backgroundnoise.wav"
+              src="https://videos.pexels.com/video-files/2620043/2620043-uhd_2560_1440_25fps.mp4"
               preload="auto"
               loop
               muted
@@ -484,20 +492,11 @@ export default function ARViewer() {
               {getPreviewContent()}
               
               {/* Floating text */}
-              {foodData.food_item.name && (
-              <a-entity
-              position="0 1 0"
-              text={`
-              value: ${foodData.food_item.name.toUpperCase()};
-              align: center;
-              color: #000;
-              side: double;
-              width: 3.5;
-              background: transparent;
-              `}
-              ></a-entity>
+            {foodData.food_item.name && (
+            <div className="absolute top-10 left-1/2 transform -translate-x-1/2 z-50 text-white text-xl font-bold">
+              {foodData.food_item.name.toUpperCase()}
+            </div>
             )}
-
             </a-entity>
           </a-entity>
         </a-scene>
@@ -818,4 +817,4 @@ export default function ARViewer() {
     </div>
     </>
   );
-}          
+}

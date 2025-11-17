@@ -11,7 +11,8 @@ Each food item has a dictionary with the following structure:
     "name": "Food Name",
     "category": "Category name (starters, main_course, desserts, drinks)",
     "image_url": "URL to 2D image",
-    "model_url": "URL to 3D model (.glb)",
+    "model_url": "URL to sketchfab 3D model (.glb)",
+    "model_glb_url": "Direct URL to the .glb file for AR viewer",
     "video_url": "URL to 360° video",
     "tags": ["tag1", "tag2"]
 }
@@ -26,6 +27,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "starters",
             "image_url": "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/3d-models/bruschetta-mix-f241887751f2402ab3e12a98b43c7438/embed",
+            "model_glb_url": None,
             "video_url": "https://videos.pexels.com/video-files/9020883/9020883-uhd_2560_1440_25fps.mp4",
             "tags": ["italian", "bread", "tomato", "appetizer"]
         },
@@ -34,6 +36,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "starters",
             "image_url": "https://images.unsplash.com/photo-1669340781012-ae89fbac9fc3?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/108fbe18e1a74398ab75a96f83393eb5/embed",
+            "model_glb_url": "https://sweet-biscotti-a00c4d.netlify.app/spring_rolls-v1.glb",
             "video_url": "https://videos.pexels.com/video-files/11579504/11579504-uhd_1440_2560_25fps.mp4",
             "tags": ["asian", "fried", "vegetables", "appetizer"]
         },
@@ -42,6 +45,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "starters",
             "image_url": "https://images.unsplash.com/photo-1582169296194-e4d644c48063?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/3d-models/cheese-nachos-d9a524bd63fc46ad90ad043d295b6d46/embed",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://videos.pexels.com/video-files/7613577/7613577-hd_1080_1920_24fps.mp4",
             "tags": ["mexican", "cheese", "spicy", "sharing"]
         },
@@ -50,6 +54,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "starters",
             "image_url": "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/c2e8d118a06d4fd5a1b9c7eedc6b3a5a/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["seafood", "fried", "appetizer", "mediterranean"]
         },
@@ -58,6 +63,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "starters",
             "image_url": "https://images.unsplash.com/photo-1577805947697-89e18249d767?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a5d9cce75c684e8d96fbd1662fdf1e00/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["middle eastern", "vegetarian", "chickpeas", "dip"]
         },
@@ -66,6 +72,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "starters",
             "image_url": "https://images.unsplash.com/photo-1608039755401-742074f0548d?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/d6c0a68758b243b48f9fa3c586db2a77/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["spicy", "chicken", "american", "bar food"]
         },
@@ -74,6 +81,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "starters",
             "image_url": "https://images.unsplash.com/photo-1548340748-6d98e4415356?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a439f00b8b7f4d36a0a01b3b1a3e39a0/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["cheese", "fried", "italian", "appetizer"]
         },
@@ -82,6 +90,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "starters",
             "image_url": "https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/c2e8d118a06d4fd5a1b9c7eedc6b3a5a/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["hot", "vegetarian", "comfort food", "tomato"]
         }
@@ -94,6 +103,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/64fa0e8a9736d6c5a1c0c2a0/embed",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://videos.pexels.com/video-files/4253729/4253729-uhd_2732_1440_25fps.mp4",
             "tags": ["beef", "american", "sandwich", "fast food"]
         },
@@ -102,6 +112,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/3d-models/pizza-8a07b3b8e7d24e259b4505f4ca129d0e/embed",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-pizza-with-mushrooms-and-olives-degrees-looped-animation-of-pizza-isolated-on-black.mp4",
             "tags": ["italian", "cheese", "tomato", "vegetarian"]
         },
@@ -110,6 +121,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/d6c0a68758b243b48f9fa3c586db2a77/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["italian", "beef", "tomato sauce", "pasta"]
         },
@@ -118,6 +130,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a439f00b8b7f4d36a0a01b3b1a3e39a0/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["beef", "grilled", "american", "protein"]
         },
@@ -126,6 +139,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/c2e8d118a06d4fd5a1b9c7eedc6b3a5a/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["japanese", "seafood", "rice", "raw"]
         },
@@ -134,6 +148,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/d6c0a68758b243b48f9fa3c586db2a77/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["indian", "spicy", "chicken", "curry"]
         },
@@ -142,6 +157,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a439f00b8b7f4d36a0a01b3b1a3e39a0/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["seafood", "healthy", "grilled", "protein"]
         },
@@ -150,6 +166,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/c2fb977d91f04a3aaec401c49d899c00/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["healthy", "vegetarian", "fresh", "chicken"]
         },
@@ -158,6 +175,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/c2e8d118a06d4fd5a1b9c7eedc6b3a5a/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["mexican", "spicy", "beef", "tortilla"]
         },
@@ -166,6 +184,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "main_course",
             "image_url": "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/d6c0a68758b243b48f9fa3c586db2a77/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["italian", "pasta", "beef", "cheese"]
         }
@@ -178,6 +197,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "desserts",
             "image_url": "https://images.unsplash.com/photo-1576506295286-5cda18df43e7?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a5d9cce75c684e8d96fbd1662fdf1e00/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["cold", "sweet", "vanilla", "dairy"]
         },
@@ -186,6 +206,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "desserts",
             "image_url": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a5d9cce75c684e8d96fbd1662fdf1e00/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["chocolate", "sweet", "baked", "birthday"]
         },
@@ -194,6 +215,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "desserts",
             "image_url": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/d6c0a68758b243b48f9fa3c586db2a77/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["cheese", "sweet", "creamy", "american"]
         },
@@ -202,6 +224,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "desserts",
             "image_url": "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a439f00b8b7f4d36a0a01b3b1a3e39a0/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["italian", "coffee", "mascarpone", "cocoa"]
         },
@@ -210,6 +233,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "desserts",
             "image_url": "https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/c2e8d118a06d4fd5a1b9c7eedc6b3a5a/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["american", "apple", "baked", "cinnamon"]
         },
@@ -218,6 +242,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "desserts",
             "image_url": "https://images.unsplash.com/photo-1615394695852-27471f552c8c?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a5d9cce75c684e8d96fbd1662fdf1e00/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["french", "custard", "caramel", "creamy"]
         },
@@ -226,6 +251,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "desserts",
             "image_url": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/d6c0a68758b243b48f9fa3c586db2a77/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["chocolate", "sweet", "baked", "nuts"]
         },
@@ -234,6 +260,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "desserts",
             "image_url": "https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a439f00b8b7f4d36a0a01b3b1a3e39a0/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["italian", "creamy", "vanilla", "berries"]
         }
@@ -246,6 +273,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "drinks",
             "image_url": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a5d9cce75c684e8d96fbd1662fdf1e00/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["hot", "caffeine", "milk", "italian"]
         },
@@ -254,6 +282,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "drinks",
             "image_url": "https://images.unsplash.com/photo-1553530666-ba11a90a0868?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a5d9cce75c684e8d96fbd1662fdf1e00/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["cold", "fruit", "healthy", "sweet"]
         },
@@ -262,6 +291,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "drinks",
             "image_url": "https://images.unsplash.com/photo-1621263764928-df1444c5e859?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/d6c0a68758b243b48f9fa3c586db2a77/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["cold", "citrus", "refreshing", "sweet"]
         },
@@ -270,6 +300,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "drinks",
             "image_url": "https://images.unsplash.com/photo-1551024709-8f23befc6f87?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a439f00b8b7f4d36a0a01b3b1a3e39a0/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["alcoholic", "mint", "lime", "refreshing"]
         },
@@ -278,6 +309,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "drinks",
             "image_url": "https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/c2e8d118a06d4fd5a1b9c7eedc6b3a5a/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["hot", "healthy", "antioxidant", "asian"]
         },
@@ -286,6 +318,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "drinks",
             "image_url": "https://images.unsplash.com/photo-1572490122747-3968b75cc699?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a5d9cce75c684e8d96fbd1662fdf1e00/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["cold", "chocolate", "dairy", "sweet"]
         },
@@ -294,6 +327,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "drinks",
             "image_url": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/d6c0a68758b243b48f9fa3c586db2a77/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
             "tags": ["alcoholic", "grape", "elegant", "dinner"]
         },
@@ -302,6 +336,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "drinks",
             "image_url": "https://images.unsplash.com/photo-1600271886742-f049cd451bba?q=80&w=1000&auto=format&fit=crop",
             "model_url": "https://sketchfab.com/models/a439f00b8b7f4d36a0a01b3b1a3e39a0/download",
+            "model_glb_url": None, # TODO: Add direct .glb URL
             "video_url": "https://ak.picdn.net/shutterstock/videos/1075135305/preview/stock-footage-rotating-food-on-black-background.mp4",
             "tags": ["cold", "fruit", "breakfast", "vitamin c"]
         }
@@ -321,22 +356,24 @@ def get_food_item_media(name, category=None):
               If the food item is not found, returns default media
     """
     # Convert name to lowercase for case-insensitive matching
-    name_lower = name.lower()
+
+    name_normalized = name.lower().replace(" ", "_").replace("-", "_")
     
-    # If category is provided, search only in that category
+    # If category is provided, search in that category first
     if category and category in FOOD_ITEMS_MAPPING:
         category_items = FOOD_ITEMS_MAPPING[category]
-        
-        # Try to find an exact match in the category
         for key, item in category_items.items():
-            if key == name_lower or name_lower in key or key in name_lower:
+            key_normalized = key.lower().replace(" ", "_").replace("-", "_")
+            if key_normalized == name_normalized:
                 return item
-    else:
-        # Search in all categories
-        for category, items in FOOD_ITEMS_MAPPING.items():
-            for key, item in items.items():
-                if key == name_lower or name_lower in key or key in name_lower:
-                    return item
+
+    # If not found in the specified category (or if no category was provided),
+    # search in all categories as a fallback.
+    for cat, items in FOOD_ITEMS_MAPPING.items():
+        for key, item in items.items():
+            key_normalized = key.lower().replace(" ", "_").replace("-", "_")
+            if key_normalized == name_normalized:
+                return item
     
     # Return default media if no match is found
     return {
@@ -344,6 +381,7 @@ def get_food_item_media(name, category=None):
         "category": category or "main_course",
         "image_url": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop",
         "model_url": "https://sketchfab.com/models/a5d9cce75c684e8d96fbd1662fdf1e00/download",
+        "model_glb_url": None,
         "video_url": "https://ak.picdn.net/shutterstock/videos/1093161954/preview/stock-footage-rotating-food-isolated-on-black.mp4",
         "tags": ["food"]
     }

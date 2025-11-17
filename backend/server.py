@@ -142,6 +142,7 @@ class FoodLibraryItem(BaseModel):
     # New optional asset fields so each item can have all three
     image_url: Optional[str] = None
     model_url: Optional[str] = None
+    model_glb_url: Optional[str] = None 
     video_url: Optional[str] = None
     tags: List[str] = []
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -528,6 +529,7 @@ async def delete_food_item(
 @api_router.get("/food-items/{food_item_id}")
 async def get_food_item_public(food_item_id: str):
     """Public endpoint for AR viewer"""
+    from food_item_mapping import get_food_item_media
     food_item = await db.food_items.find_one({"id": food_item_id})
     if not food_item:
         raise HTTPException(status_code=404, detail="Food item not found")
@@ -540,10 +542,14 @@ async def get_food_item_public(food_item_id: str):
     if food_item.get("library_item_id"):
         library_item = await db.food_library.find_one({"id": food_item["library_item_id"]})
     
+    # Get the full media mapping from food_item_mapping.py
+    food_item_mapping = get_food_item_media(food_item["name"], food_item["category"])
+    
     return {
         "food_item": FoodItem(**food_item),
         "restaurant": Restaurant(**restaurant) if restaurant else None,
-        "library_item": FoodLibraryItem(**library_item) if library_item else None
+        "library_item": FoodLibraryItem(**library_item) if library_item else None,
+        "food_item_mapping": food_item_mapping
     }
 
 # QR Code routes
@@ -607,6 +613,7 @@ async def get_food_library(category: Optional[str] = None, search: Optional[str]
             "thumbnail_url": item.get("image_url"),
             "image_url": item.get("image_url"),
             "model_url": item.get("model_url"),
+            "model_glb_url": item.get("model_glb_url"),
             "video_url": item.get("video_url"),
             "tags": item.get("tags", []),
             "created_at": datetime.now().isoformat()
@@ -938,6 +945,8 @@ async def seed_food_library():
             else:  # 2d_image
                 file_url = thumb_url
 
+            glb = file_url if ptype == "3d_model" else None
+
             gen_item = FoodLibraryItem(
                 name=name,
                 category=category,
@@ -946,6 +955,7 @@ async def seed_food_library():
                 thumbnail_url=thumb_url,
                 image_url=image_url,
                 model_url=glb_assets[index % len(glb_assets)],
+                model_glb_url=glb, 
                 video_url=video_360_urls[index % len(video_360_urls)],
                 tags=[category.replace("_", " "), ptype, keyword]
             )
@@ -965,7 +975,7 @@ async def seed_food_library():
             ]
             video_360_urls = [
                 "https://storage.googleapis.com/vrview/examples/coral.mp4",
-                "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                # "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
             ]
             food_keywords = {
                 "starters": ["appetizer", "salad", "soup", "bruschetta"],
@@ -991,6 +1001,8 @@ async def seed_food_library():
                 else:
                     file_url = thumb_url
 
+                glb = file_url if ptype == "3d_model" else None
+
                 gen_item = FoodLibraryItem(
                     name=name,
                     category=category,
@@ -999,6 +1011,7 @@ async def seed_food_library():
                     thumbnail_url=thumb_url,
                     image_url=image_url,
                     model_url=glb_assets[index % len(glb_assets)],
+                    model_glb_url=glb,
                     video_url=video_360_urls[index % len(video_360_urls)],
                     tags=[category.replace("_", " "), ptype, keyword]
                 )

@@ -234,7 +234,7 @@ export default function FoodItemManager() {
   const getPreviewUrlForType = (libraryItem, previewType) => {
     switch (previewType) {
       case '3d_model':
-        return libraryItem.model_url || libraryItem.file_url || '';
+        return libraryItem.model_glb_url || libraryItem.file_url || '';
       case '360_video':
         return libraryItem.video_url || '';
       case '2d_image':
