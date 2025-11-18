@@ -587,7 +587,11 @@ async def get_food_library(category: Optional[str] = None, search: Optional[str]
     normalized = []
     for item in filtered_items:
         # Generate a unique ID for each item
-        item_id = str(uuid.uuid4())
+        # item_id = str(uuid.uuid4())
+        
+        # ⭐ STABLE ID: based on name + category (never changes)
+        item_key = f"{item.get('name','')}-{item.get('category','')}"
+        item_id = hashlib.md5(item_key.encode()).hexdigest()
         
         # Determine preview_type based on available media URLs
         preview_type = "2d_image"  # Default

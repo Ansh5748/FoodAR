@@ -79,6 +79,21 @@ export default function FoodItemManager() {
     fetchFoodLibraryItems();
   }, [restaurantId]);
 
+  useEffect(() => {
+    if (!editingItem) return;
+    if (foodLibraryItems.length === 0) return;
+
+    const id = String(editingItem.library_item_id || "");
+    const exists = foodLibraryItems.some(lib => lib.id === id);
+
+    setFormData(prev => ({
+      ...prev,
+      library_item_id: exists ? id : ""
+    }));
+  }, [editingItem, foodLibraryItems]);
+
+
+
   const fetchRestaurant = async () => {
     try {
       const response = await axios.get(`${API}/restaurants/${restaurantId}`);
@@ -204,10 +219,14 @@ export default function FoodItemManager() {
       category: item.category,
       preview_type: item.preview_type,
       preview_url: item.preview_url || '',
-      library_item_id: item.library_item_id ? String(item.library_item_id) : ''
+      library_item_id : item.library_item_id ? String(item.library_item_id) : ""
+
     });
     setEditingItem(item);
     setShowAddDialog(true);
+    console.log("library items:", foodLibraryItems.length, "value:", formData.library_item_id);
+    console.log("All library IDs:", foodLibraryItems.map(i => i.id));
+    console.log("Editing ID:", item.library_item_id);
   };
 
   const handleDelete = async (itemId) => {
