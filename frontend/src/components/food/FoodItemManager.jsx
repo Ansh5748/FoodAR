@@ -142,7 +142,12 @@ export default function FoodItemManager() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    if (!formData.library_item_id) {
+      toast.error("Please select a food library item.");
+      return;
+    }
+
     try {
       const submitData = {
         ...formData,
@@ -415,16 +420,17 @@ export default function FoodItemManager() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Select from Food Library (Optional)</Label>
+                  <Label>Select from Food Library</Label>
                   <Select
-                    value={formData.library_item_id || 'none'}
+                  required
+                    value={formData.library_item_id || ''}
                     onValueChange={handleLibraryItemSelect}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Choose from food library or leave empty for custom" />
                     </SelectTrigger>
                     <SelectContent className="z-[70]">
-                      <SelectItem value="none">Custom Item (No Library Selection)</SelectItem>
+                      <SelectItem value="none" disabled>Custom Item (No Library Selection)</SelectItem>
                       {getFilteredLibraryItems().map((item) => (
                         <SelectItem key={item.id} value={item.id}>
                           <div className="flex items-center">
