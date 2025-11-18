@@ -224,9 +224,9 @@ export default function FoodItemManager() {
     });
     setEditingItem(item);
     setShowAddDialog(true);
-    console.log("library items:", foodLibraryItems.length, "value:", formData.library_item_id);
-    console.log("All library IDs:", foodLibraryItems.map(i => i.id));
-    console.log("Editing ID:", item.library_item_id);
+    // console.log("library items:", foodLibraryItems.length, "value:", formData.library_item_id);
+    // console.log("All library IDs:", foodLibraryItems.map(i => i.id));
+    // console.log("Editing ID:", item.library_item_id);
   };
 
   const handleDelete = async (itemId) => {
@@ -628,7 +628,9 @@ export default function FoodItemManager() {
                         </CardTitle>
                         <div className="flex items-center space-x-2 mb-2">
                           <Badge variant="secondary" className="bg-orange-100 text-orange-700">
-                            {CATEGORIES.find(c => c.value === displayCategory)?.label || displayCategory}
+                            {item.library_item_id
+                            ? (CATEGORIES.find(c => c.value === displayCategory)?.label || displayCategory)
+                            : "Custom"}
                           </Badge>
                           <Badge variant="outline" className="border-blue-200 text-blue-700">
                             <PreviewIcon className="w-3 h-3 mr-1" />
