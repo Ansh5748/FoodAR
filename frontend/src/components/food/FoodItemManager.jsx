@@ -105,7 +105,14 @@ export default function FoodItemManager() {
   const fetchFoodLibraryItems = async () => {
     try {
       const response = await axios.get(`${API}/food-library`);
-      setFoodLibraryItems(response.data);
+      setFoodLibraryItems(response.data.map(item => ({
+        ...item,
+        id: String(item.id),
+        category: item.category
+          ? item.category.toLowerCase().replace(/\s+/g, "_")
+          : ""
+      }))
+    );
     } catch (error) {
       console.error('Error fetching food library items:', error);
       // Don't show error toast as this is optional
@@ -143,14 +150,29 @@ export default function FoodItemManager() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.library_item_id) {
+    if (!formData.library_item_id && formData.preview_type!="custom") {
       toast.error("Please select a food library item.");
       return;
+    }
+
+    let detectedType = formData.preview_type;
+
+    if (formData.preview_type === "custom" && formData.preview_url) {
+      const url = formData.preview_url.toLowerCase();
+
+      if (url.endsWith(".glb")) {
+        detectedType = "3d_model";
+      } else if (url.endsWith(".mp4")) {
+        detectedType = "360_video";
+      } else {
+        detectedType = "2d_image";
+      }
     }
 
     try {
       const submitData = {
         ...formData,
+        preview_type: detectedType,
         price: parseFloat(formData.price)
       };
 
@@ -182,7 +204,7 @@ export default function FoodItemManager() {
       category: item.category,
       preview_type: item.preview_type,
       preview_url: item.preview_url || '',
-      library_item_id: item.library_item_id || ''
+      library_item_id: item.library_item_id ? String(item.library_item_id) : ''
     });
     setEditingItem(item);
     setShowAddDialog(true);
@@ -217,24 +239,32 @@ export default function FoodItemManager() {
   };
 
   const handleLibraryItemSelect = (libraryItemId) => {
-    if (libraryItemId && libraryItemId !== 'none') {
-      const libraryItem = foodLibraryItems.find(item => item.id === libraryItemId);
-      if (libraryItem) {
-        setFormData({
-          ...formData,
-          library_item_id: libraryItemId,
-          preview_type: formData.preview_type, // Keep current preview type
-          preview_url: getPreviewUrlForType(libraryItem, formData.preview_type)
-        });
-      }
-    } else {
+  const idStr = String(libraryItemId);
+
+  if (idStr && idStr !== "none") {
+    const libraryItem = foodLibraryItems.find(item => String(item.id) === idStr);
+
+    if (libraryItem) {
       setFormData({
         ...formData,
-        library_item_id: '',
-        preview_url: ''
+        library_item_id: idStr,
+        preview_type: formData.preview_type,
+        preview_url: getPreviewUrlForType(libraryItem, formData.preview_type)
       });
+
+      // auto-set filter so the selected item remains visible
+      setLibraryCategoryFilter(libraryItem.category);
     }
-  };
+  } else {
+    setFormData({
+      ...formData,
+      library_item_id: "",
+      preview_url: ""
+    });
+    setLibraryCategoryFilter("all");
+  }
+};
+
 
   const getPreviewUrlForType = (libraryItem, previewType) => {
     switch (previewType) {
@@ -245,14 +275,14 @@ export default function FoodItemManager() {
       case '2d_image':
         return libraryItem.image_url || libraryItem.thumbnail_url || '';
       default:
-        return libraryItem.model_url || libraryItem.file_url || '';
+        return libraryItem.model_glb_url || libraryItem.file_url || '';
     }
   };
 
   const handlePreviewTypeChange = (previewType) => {
     const newPreviewUrl = formData.library_item_id ? 
       getPreviewUrlForType(
-        foodLibraryItems.find(item => item.id === formData.library_item_id), 
+        foodLibraryItems.find(item => String(item.id) === String(formData.library_item_id)), 
         previewType
       ) : '';
     
@@ -267,7 +297,7 @@ export default function FoodItemManager() {
     return foodLibraryItems.filter(item => {
       const matchesSearch = item.name.toLowerCase().includes(librarySearchTerm.toLowerCase()) ||
                            item.category.toLowerCase().includes(librarySearchTerm.toLowerCase());
-      const matchesCategory = libraryCategoryFilter === 'all' || item.category === libraryCategoryFilter;
+      const matchesCategory = libraryCategoryFilter === 'all' || String(item.category).toLowerCase().replace(/\s+/g, "_") === libraryCategoryFilter;
       return matchesSearch && matchesCategory;
     });
   };
@@ -513,7 +543,7 @@ export default function FoodItemManager() {
                       name="preview_url"
                       value={formData.preview_url}
                       onChange={handleInputChange}
-                      placeholder="https://example.com/model.glb"
+                      placeholder="Use .glb for 3D, .mp4 for video, and any format for images"
                     />
                   </div>
                 )}
@@ -565,7 +595,8 @@ export default function FoodItemManager() {
               const PreviewIcon = getPreviewIcon(item.preview_type);
               // Get the library item's category if the menu item is from library
               const libraryItem = item.library_item_id ? 
-                foodLibraryItems.find(libItem => libItem.id === item.library_item_id) : null;
+                foodLibraryItems.find(libItem => String(libItem.id) === String(item.library_item_id)) : null;
+              const rawCategory = libraryItem ? libraryItem.category : item.category;
               const displayCategory = libraryItem ? libraryItem.category : item.category;
               
               return (
@@ -596,14 +627,12 @@ export default function FoodItemManager() {
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                       {item.description}
                     </p>
-                    {item.library_item_id && (
                       <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
                         <div className="flex items-center text-xs text-blue-700">
                           <Eye className="w-3 h-3 mr-1" />
-                          <span>From Food Library</span>
+                          <span>{item.library_item_id ? "From Food Library" : "Custom Added"}</span>
                         </div>
                       </div>
-                    )}
                     <div className="space-y-2">
                       <Button
                         size="sm"

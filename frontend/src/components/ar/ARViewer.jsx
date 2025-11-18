@@ -224,7 +224,7 @@ export default function ARViewer() {
       if (mapping?.model_glb_url || fetchedFoodData.food_item.preview_type === '3d_model') {
           const fi = fetchedFoodData.food_item;
 
-            const glbUrl = mapping?.model_glb_url || fi?.model_glb_url || lib?.model_glb_url || null;
+            const glbUrl = fi?.preview_url || mapping?.model_glb_url || fi?.model_glb_url || lib?.model_glb_url || null;
         setPreviewUrl(glbUrl);
       } else {
         const file = fetchedFoodData.food_item.preview_url || fetchedFoodData.library_item;
