@@ -206,7 +206,7 @@ export default function FoodLibrary() {
               variant="outline"
               size="sm"
               onClick={() => navigate('/dashboard')}
-              className="mr-4 border-orange-200 text-orange-700 hover:bg-orange-50"
+              className="self-start mr-4 border-orange-200 text-orange-700 hover:bg-orange-50"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Dashboard
