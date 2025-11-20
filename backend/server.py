@@ -821,6 +821,9 @@ async def get_system_stats():
         "library_items": total_library_items,
         "recent_analytics": [serialize_doc(event) for event in recent_analytics]
     }
+@app.get("/")
+def root():
+    return {"message": "DishLook Backend running successfully 🚀"}
 
 # Include router
 app.include_router(api_router)
