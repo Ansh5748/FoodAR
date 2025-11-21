@@ -383,7 +383,8 @@ export default function ARViewer() {
     switch (food_item.preview_type) {
       case '3d_model':
         return (
-          <a-entity position="0 0 -2">
+          // <a-entity position="0 0 -2">
+          <a-entity position="0 0.5 -2">
             <a-entity
               id="interactive-model"
               gltf-model={pv}
@@ -471,9 +472,9 @@ export default function ARViewer() {
           ref={sceneRef}
           embedded
           vr-mode-ui="enabled: false"
-          renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; colorManagement: true;  physicallyCorrectLights: true;"
-          arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false;"
-          style={{ position: 'absolute', top: '10%', left: '10%', width: '80%', height: '80%', zIndex: 10, background: 'transparent', pointerEvents: 'auto',touchAction: 'none',userSelect: 'none', }}
+          renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; colorManagement: true; physicallyCorrectLights: true;"
+          arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false; videoTexture: true;"
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, background: 'transparent', pointerEvents: 'auto', touchAction: 'none', userSelect: 'none' }}
         >
           <a-assets>
             <video
@@ -493,7 +494,7 @@ export default function ARViewer() {
               
               {/* Floating text */}
             {foodData.food_item.name && (
-            <div className="absolute top-10 left-1/2 transform -translate-x-1/2 z-50 text-white text-xl font-bold">
+            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 text-white font-bold bg-black/30 px-4 py-2 rounded-lg backdrop-blur-sm whitespace-nowrap text-sm sm:text-base md:text-xl max-w-[90vw] overflow-hidden">
               {foodData.food_item.name.toUpperCase()}
             </div>
             )}
@@ -651,8 +652,8 @@ export default function ARViewer() {
             onClick={() => {
               // Reset AR scene
               if (sceneRef.current) {
-                const contentContainer = sceneRef.current.querySelector('#content-container');
-                if (contentContainer) {
+                const contentContainer = sceneRef.current.querySelector('#content-container');                // if (contentContainer) {
+                if (contentContainer && contentContainer.object3D) {
                   // Reset position and rotation
                   contentContainer.object3D.position.set(0, 0, -3);
                   contentContainer.object3D.rotation.set(0, 0, 0);
@@ -692,7 +693,8 @@ export default function ARViewer() {
             onClick={() => {
               // Zoom in
               const contentContainer = sceneRef.current?.querySelector('#content-container');
-              if (contentContainer) {
+              // if (contentContainer) {
+              if (contentContainer && contentContainer.object3D) {
                 const currentScale = contentContainer.object3D.scale;
                 contentContainer.object3D.scale.set(
                   currentScale.x * 1.2,
@@ -712,7 +714,8 @@ export default function ARViewer() {
             onClick={() => {
               // Zoom out
               const contentContainer = sceneRef.current?.querySelector('#content-container');
-              if (contentContainer) {
+              // if (contentContainer) {
+              if (contentContainer && contentContainer.object3D) {
                 const currentScale = contentContainer.object3D.scale;
                 contentContainer.object3D.scale.set(
                   currentScale.x * 0.8,
