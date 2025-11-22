@@ -473,7 +473,7 @@ export default function ARViewer() {
           embedded
           vr-mode-ui="enabled: false"
           renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; colorManagement: true; physicallyCorrectLights: true;"
-          arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false; videoTexture: true;"
+          arjs="sourceType: webcam; trackingMethod: none; debugUIEnabled: false; videoTexture: true;"
           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, background: 'transparent', pointerEvents: 'auto', touchAction: 'none', userSelect: 'none' }}
         >
           <a-assets>
