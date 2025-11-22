@@ -166,34 +166,34 @@ export default function ARViewer() {
   });
 }, [arLoaded]);
 
-useEffect(() => {
-  if (!arLoaded || !window.AFRAME) return;
+// useEffect(() => {
+//   if (!arLoaded || !window.AFRAME) return;
 
-  // prevent double registration
-  if (window.AFRAME.components["position-lock"]) return;
+//   // prevent double registration
+//   if (window.AFRAME.components["position-lock"]) return;
 
-  window.AFRAME.registerComponent("position-lock", {
-    schema: {
-      x: { type: "number", default: 0 },
-      y: { type: "number", default: 0 },
-      z: { type: "number", default: -3 }
-    },
+//   window.AFRAME.registerComponent("position-lock", {
+//     schema: {
+//       x: { type: "number", default: 0 },
+//       y: { type: "number", default: 0 },
+//       z: { type: "number", default: -3 }
+//     },
 
-    init: function () {
-      // same logic as interactive-rotation: store fixed position
-      this.fixedPosition = new THREE.Vector3(
-        this.data.x,
-        this.data.y,
-        this.data.z
-      );
-    },
+//     init: function () {
+//       // same logic as interactive-rotation: store fixed position
+//       this.fixedPosition = new THREE.Vector3(
+//         this.data.x,
+//         this.data.y,
+//         this.data.z
+//       );
+//     },
 
-    tick: function () {
-      // same line you used inside interactive-rotation
-      this.el.object3D.position.copy(this.fixedPosition);
-    }
-  });
-}, [arLoaded]);
+//     tick: function () {
+//       // same line you used inside interactive-rotation
+//       this.el.object3D.position.copy(this.fixedPosition);
+//     }
+//   });
+// }, [arLoaded]);
 
 
  useEffect(() => {
@@ -489,7 +489,7 @@ useEffect(() => {
 
           {/* Camera with content directly attached */}
           <a-entity camera look-controls position="0 1.6 0">
-            <a-entity id="content-container" position-lock="x:0; y:0; z:-2">
+            <a-entity id="content-container" position="0 0 -2" rotation="0 0 0">
               {getPreviewContent()}
               
               {/* Floating text */}
