@@ -166,27 +166,26 @@ export default function ARViewer() {
   });
 }, [arLoaded]);
 
-// useEffect(() => {
-//   if (!arLoaded || !window.AFRAME) return;
+useEffect(() => {
+  if (!arLoaded || !window.AFRAME) return;
 
-//   // prevent double registration
-//   if (window.AFRAME.components["position-lock"]) return;
+  // prevent double registration
+  if (window.AFRAME.components["camera-follower"]) return;
 
-//   window.AFRAME.registerComponent("position-lock", {
-//     schema: {
-//       x: { type: "number", default: 0 },
-//       y: { type: "number", default: 0 },
-//       z: { type: "number", default: -3 }
-//     },
+  window.AFRAME.registerComponent("camera-follower", {
+    init: function () {
+      this.camera = this.el.sceneEl.camera.el;
+    },
+    tick: function () {
+      if (this.camera) {
+        // Copy the camera's world position and rotation to this entity
+        this.camera.object3D.getWorldPosition(this.el.object3D.position);
+        this.camera.object3D.getWorldQuaternion(this.el.object3D.quaternion);
+      }
+    },
+  });
+}, [arLoaded]);
 
-//     init: function () {
-//       // same logic as interactive-rotation: store fixed position
-//       this.fixedPosition = new THREE.Vector3(
-//         this.data.x,
-//         this.data.y,
-//         this.data.z
-//       );
-//     },
 
 //     tick: function () {
 //       // same line you used inside interactive-rotation
@@ -473,7 +472,7 @@ export default function ARViewer() {
           embedded
           vr-mode-ui="enabled: false"
           renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; colorManagement: true; physicallyCorrectLights: true;"
-          arjs="sourceType: webcam; trackingMethod: none; debugUIEnabled: false; videoTexture: true;"
+          arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false; videoTexture: true;"
           style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, background: 'transparent', pointerEvents: 'auto', touchAction: 'none', userSelect: 'none' }}
         >
           <a-assets>
@@ -488,18 +487,23 @@ export default function ARViewer() {
           </a-assets>
 
           {/* Camera with content directly attached */}
-          <a-entity camera look-controls position="0 1.6 0">
-            <a-entity id="content-container" position="0 0 -2" rotation="0 0 0">
-              {getPreviewContent()}
-              
-              {/* Floating text */}
+          <a-entity camera look-controls="enabled: true" position="0 1.6 0"></a-entity>
+
+          {/* This entity will follow the camera */}
+          <a-entity id="follower" camera-follower>
+              {/* The content is a child of the follower, positioned in front of it */}
+              <a-entity id="content-container" position="0 0 -2" rotation="0 0 0">
+                {getPreviewContent()}
+              </a-entity>
+          </a-entity>
+
             {foodData.food_item.name && (
             <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 text-white font-bold bg-black/30 px-4 py-2 rounded-lg backdrop-blur-sm whitespace-nowrap text-sm sm:text-base md:text-xl max-w-[90vw] overflow-hidden">
               {foodData.food_item.name.toUpperCase()}
             </div>
             )}
-            </a-entity>
-          </a-entity>
+            {/* </a-entity> */}
+          {/* </a-entity> */}
         </a-scene>
       )}
 
