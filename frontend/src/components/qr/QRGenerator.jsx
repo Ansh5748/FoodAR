@@ -228,6 +228,16 @@ export default function QRGenerator() {
     );
   }
 
+  const getCurrencySymbol = (currency) => {
+  const symbols = {
+    INR: "₹",
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+  };
+  return symbols[currency] || "₹";
+};
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
       {/* Header */}
@@ -343,7 +353,7 @@ export default function QRGenerator() {
                     </CardTitle>
                     <div className="flex items-center space-x-2">
                       <Badge variant="secondary" className="bg-orange-100 text-orange-700">
-                        ${qrCode.food_item.price}
+                        {getCurrencySymbol(qrCode.food_item.currency)} {qrCode.food_item.price}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         {qrCode.scan_count} scans
