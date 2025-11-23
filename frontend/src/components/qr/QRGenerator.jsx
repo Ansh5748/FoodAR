@@ -366,11 +366,11 @@ export default function QRGenerator() {
                       <QRCodeCanvas
                         id={`qr-canvas-${qrCode.id}`}
                         value={`${window.location.origin}/ar/${qrCode.food_item.id}`}
-                        size={192} // Corresponds to max-w-48
+                        size={256} // Increased size for better quality
                         bgColor={"#ffffff"}
                         fgColor={"#000000"}
                         level={"L"}
-                        includeMargin={false}
+                        includeMargin={true} // A small margin helps scanners
                       />
                     </div>
 
