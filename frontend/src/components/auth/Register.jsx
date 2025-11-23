@@ -67,7 +67,10 @@ export default function Register() {
       };
 
       const response = await axios.post(`${API}/auth/register`, registerData);
-      login(response.data);
+      const { access_token, refresh_token, user } = response.data;
+      if (access_token && refresh_token && user) {
+        login({ access_token, refresh_token, user });
+      }
       
       // Determine redirect based on user role
       let redirectPath = '/dashboard';

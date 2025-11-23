@@ -35,7 +35,11 @@ export default function Login() {
 
     try {
       const response = await axios.post(`${API}/auth/login`, formData);
-      login(response.data);
+      // The login function from useAuth should handle storing tokens
+      const { access_token, refresh_token, user } = response.data;
+      if (access_token && refresh_token && user) {
+        login({ access_token, refresh_token, user });
+      }
       
       // Determine redirect based on user role
       let redirectPath = '/dashboard';
@@ -125,6 +129,15 @@ export default function Login() {
                   )}
                 </button>
               </div>
+            </div>
+
+            <div className="text-right">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-orange-600 hover:text-orange-700 font-semibold hover:underline"
+              >
+                Forgot Password?
+              </Link>
             </div>
 
             <Button

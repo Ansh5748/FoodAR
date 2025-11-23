@@ -6,6 +6,8 @@ import './App.css';
 // Components
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
 import Dashboard from './components/dashboard/Dashboard';
 import RestaurantSetup from './components/restaurant/RestaurantSetup';
 import FoodItemManager from './components/food/FoodItemManager';
@@ -122,6 +124,8 @@ function App() {
             <Route path="/register" element={
               user ? <Navigate to={getDashboardRoute(user)} /> : <Register />
             } />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/ar/:foodItemId" element={<ARViewer />} />
             
             {/* Protected routes */}

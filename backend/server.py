@@ -18,6 +18,7 @@ from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
 import json
+import smtplib, ssl
 from bson import ObjectId
 
 ROOT_DIR = Path(__file__).parent
@@ -31,6 +32,8 @@ db = client[os.environ['DB_NAME']]
 # Security
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Environment variables
 SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 
@@ -83,6 +86,12 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
 class Restaurant(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -211,13 +220,25 @@ def serialize_doc(doc):
     return doc
 
 # Utility functions
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=15)):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=120)
+    # if expires_delta:
+    #     expire = datetime.now(timezone.utc) + expires_delta
+    # else:
+    #     expire = datetime.now(timezone.utc) + timedelta(minutes=120)
+    expire = datetime.now(timezone.utc) + expires_delta
     to_encode.update({"exp": expire})
+    to_encode.update({"token_type": "access"})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def create_refresh_token(data: dict, expires_delta: timedelta = timedelta(days=7)):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + expires_delta
+    to_encode.update({"exp": expire})
+    to_encode.update({"token_type": "refresh"})
+    # Store refresh token in DB for revocation
+    # For simplicity here, we'll make it stateless.
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -235,6 +256,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
+        token_type: str = payload.get("token_type")
+        if token_type != "access":
+            raise HTTPException(status_code=401, detail="Invalid token type")
         if email is None:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     except jwt.PyJWTError:
@@ -292,7 +316,10 @@ async def register(user_data: UserCreate):
     
     # Create access token
     access_token = create_access_token(data={"sub": user_obj.email})
-    return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
+    # return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
+    refresh_token = create_refresh_token(data={"sub": user_obj.email})
+
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer", "user": user_obj}
 
 @api_router.post("/auth/login", response_model=Dict[str, Any])
 async def login(user_data: UserLogin):
@@ -316,12 +343,80 @@ async def login(user_data: UserLogin):
         user = await db.users.find_one({"email": user_data.email})
     
     access_token = create_access_token(data={"sub": user["email"]})
+    refresh_token = create_refresh_token(data={"sub": user["email"]})
     user_obj = User(**user)
-    return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
+    # return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer", "user": user_obj}
 
 @api_router.get("/auth/me", response_model=User)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return current_user
+
+@api_router.post("/auth/refresh", response_model=Dict[str, str])
+async def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    refresh_token = credentials.credentials
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        token_type = payload.get("token_type")
+        if token_type != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        
+        email = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+            
+        user = await db.users.find_one({"email": email})
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        new_access_token = create_access_token(data={"sub": email})
+        return {"access_token": new_access_token, "token_type": "bearer"}
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token has expired")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest):
+    user = await db.users.find_one({"email": request.email})
+    if not user:
+        # Don't reveal if user exists for security, but log it.
+        logger.warning(f"Password reset requested for non-existent user: {request.email}")
+        return {"message": "If an account with that email exists, a password reset link has been sent."}
+
+    # Generate a short-lived, single-use token
+    reset_token_payload = {
+        "sub": user["email"],
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=30), # 30-minute expiry
+        "token_type": "password_reset"
+    }
+    reset_token = jwt.encode(reset_token_payload, SECRET_KEY, algorithm=ALGORITHM)
+
+    # In a real app, you would email this link to the user
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
+    logger.info(f"Password reset link for {user['email']}: {reset_link}") # Log for debugging
+
+    # TODO: Implement actual email sending logic here using SendGrid, SMTP, etc.
+
+    return {"message": "If an account with that email exists, a password reset link has been sent."}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(request: ResetPasswordRequest):
+    try:
+        payload = jwt.decode(request.token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("token_type") != "password_reset":
+            raise HTTPException(status_code=400, detail="Invalid token type")
+        
+        email = payload["sub"]
+        new_password_hash = get_password_hash(request.new_password)
+        await db.users.update_one({"email": email}, {"$set": {"password_hash": new_password_hash}})
+        return {"message": "Password has been reset successfully."}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="Password reset link has expired.")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=400, detail="Invalid password reset link.")
 
 # Restaurant routes
 @api_router.post("/restaurants", response_model=Restaurant)
