@@ -52,7 +52,7 @@
                     'Open Sans', 'Helvetica Neue',
                     sans-serif !important;
                 font-size: 12px !important;
-                z-index: 9999 !important;
+                z-index: 10 !important;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
                 border-radius: 10px !important;
                 background-color: #ffffff !important;
@@ -150,6 +150,34 @@
                 api_host: "https://us.i.posthog.com",
                 person_profiles: "identified_only", // or 'always' to create profiles for anonymous users as well
             });
+
+            // Logic to hide the badge on specific routes
+            // (function () {
+            //     const badge = document.getElementById('emergent-badge');
+            //     if (!badge) return;
+
+            //     function toggleBadgeVisibility() {
+            //         const currentPath = window.location.pathname;
+            //         const shouldHide =
+            //             currentPath.includes('/register') ||
+            //             currentPath.includes('/food-items');
+                    
+            //         if (shouldHide) {
+            //             badge.style.display = 'none !important';
+            //         } else {
+            //             badge.style.display = 'flex !important';
+            //         }
+            //     }
+            //     // Use MutationObserver to detect route changes by watching the <title> tag
+            //     const titleObserver = new MutationObserver(toggleBadgeVisibility);
+            //     const titleElement = document.querySelector('title');
+            //     if (titleElement) {
+            //         titleObserver.observe(titleElement, { childList: true });
+            //     }
+            //     // Also listen for popstate (browser back/forward buttons)
+            //     window.addEventListener('popstate', toggleBadgeVisibility);
+            //     toggleBadgeVisibility();
+            // })();
         </script>
     </body>
 </html>
