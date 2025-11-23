@@ -186,13 +186,41 @@ useEffect(() => {
   });
 }, [arLoaded]);
 
+useEffect(() => {
+  if (!arLoaded || !window.AFRAME) return;
 
-//     tick: function () {
-//       // same line you used inside interactive-rotation
-//       this.el.object3D.position.copy(this.fixedPosition);
-//     }
-//   });
-// }, [arLoaded]);
+  if (window.AFRAME.components["auto-scale"]) return;
+
+  window.AFRAME.registerComponent("auto-scale", {
+    schema: {
+      target: { type: "number", default: 1 },   // max size in meters
+      boost: { type: "number", default: 1 }      // multiplier
+    },
+
+    init: function () {
+      this.el.addEventListener("model-loaded", () => {
+
+        const mesh = this.el.getObject3D("mesh");
+        if (!mesh) return;
+
+        // Compute bounding box for actual GLTF mesh only
+        mesh.traverse((child) => {
+          if (child.isMesh) child.geometry.computeBoundingBox();
+        });
+
+        const box = new THREE.Box3().setFromObject(mesh);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+
+        const scale = (this.data.target / maxDim) * this.data.boost;
+
+        // IMPORTANT: scaling the mesh directly bypasses all parent transforms
+        mesh.scale.set(scale, scale, scale);
+      });
+    }
+  });
+}, [arLoaded]);
+
 
 
  useEffect(() => {
@@ -387,7 +415,7 @@ useEffect(() => {
             <a-entity
               id="interactive-model"
               gltf-model={pv}
-              scale="0.025 0.025 0.025"
+              auto-scale="target: 1; boost: 2.5"
               animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 5000"
               interactive-rotation="enabled: true"
             />

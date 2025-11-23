@@ -27,7 +27,7 @@ FOOD_ITEMS_MAPPING = {
             "category": "starters",
             "image_url": "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f",
             "model_url": "https://sketchfab.com/3d-models/bruschetta-mix-f241887751f2402ab3e12a98b43c7438/embed",
-            "model_glb_url": None,
+            "model_glb_url": "https://sweet-biscotti-a00c4d.netlify.app/bruchetta-v1.glb",
             "video_url": "https://videos.pexels.com/video-files/9020883/9020883-uhd_2560_1440_25fps.mp4",
             "tags": ["italian", "bread", "tomato", "appetizer"]
         },
