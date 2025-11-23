@@ -394,8 +394,8 @@ export default function FoodItemManager() {
                 Add Menu Item
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-[95vw] sm:w-auto sm:max-w-2xl p-4 sm:p-6 max-h-[85vh] overflow-y-auto z-[60]">
-              <DialogHeader>
+            <DialogContent className="w-[95vw] sm:w-auto sm:max-w-2xl p-0 z-[60]">
+              <DialogHeader className="pt-4 pl-4">
                 <DialogTitle>
                   {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
                 </DialogTitle>
@@ -403,6 +403,7 @@ export default function FoodItemManager() {
                   Create an AR-enabled menu item for your restaurant
                 </DialogDescription>
               </DialogHeader>
+              <div className="max-h-[75vh] overflow-y-auto px-4 sm:px-6 py-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -583,6 +584,7 @@ export default function FoodItemManager() {
                   </Button>
                 </div>
               </form>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
