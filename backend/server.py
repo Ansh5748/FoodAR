@@ -18,6 +18,7 @@ from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
 import json
+from email.message import EmailMessage
 import smtplib, ssl
 from bson import ObjectId
 
@@ -36,6 +37,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Environment variables
 SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
+
+# Email settings from .env
+EMAIL_HOST = os.environ.get("EMAIL_HOST")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+EMAIL_USERNAME = os.environ.get("EMAIL_USERNAME")
+EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME")
+EMAIL_FROM_ADDRESS = os.environ.get("EMAIL_FROM_ADDRESS")
 
 app = FastAPI(title="FoodAR API", description="AR-QR Restaurant Management System")
 api_router = APIRouter(prefix="/api")
@@ -222,10 +231,6 @@ def serialize_doc(doc):
 # Utility functions
 def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=15)):
     to_encode = data.copy()
-    # if expires_delta:
-    #     expire = datetime.now(timezone.utc) + expires_delta
-    # else:
-    #     expire = datetime.now(timezone.utc) + timedelta(minutes=120)
     expire = datetime.now(timezone.utc) + expires_delta
     to_encode.update({"exp": expire})
     to_encode.update({"token_type": "access"})
@@ -316,7 +321,6 @@ async def register(user_data: UserCreate):
     
     # Create access token
     access_token = create_access_token(data={"sub": user_obj.email})
-    # return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
     refresh_token = create_refresh_token(data={"sub": user_obj.email})
 
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer", "user": user_obj}
@@ -345,7 +349,6 @@ async def login(user_data: UserLogin):
     access_token = create_access_token(data={"sub": user["email"]})
     refresh_token = create_refresh_token(data={"sub": user["email"]})
     user_obj = User(**user)
-    # return {"access_token": access_token, "token_type": "bearer", "user": user_obj}
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer", "user": user_obj}
 
 @api_router.get("/auth/me", response_model=User)
@@ -377,6 +380,46 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(secu
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
+async def send_password_reset_email(email_to: str, reset_link: str, user_name: str):
+    if not all([EMAIL_HOST, EMAIL_PORT, EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_FROM_ADDRESS]):
+        logger.error("Email configuration is incomplete. Cannot send password reset email.")
+        # Silently fail in production to not expose server issues, but log it.
+        return
+
+    message = EmailMessage()
+    message["From"] = f"{EMAIL_FROM_NAME} <{EMAIL_FROM_ADDRESS}>"
+    message["To"] = email_to
+    message["Subject"] = "Reset Your DishLook Password"
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; margin: 20px; color: #333;">
+        <h2>Password Reset Request</h2>
+        <p>Hello {user_name},</p>
+        <p>We received a request to reset the password for your DishLook account. Please click the button below to set a new password:</p>
+        <a href="{reset_link}" style="background-color: #F97316; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
+            Reset Password
+        </a>
+        <p>This link will expire in 30 minutes.</p>
+        <p>If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>
+        <p>Thanks,<br>The DishLook Team</p>
+    </body>
+    </html>
+    """
+    message.set_content("Please reset your password using the link above.", subtype="plain")
+    message.add_alternative(html_content, subtype="html")
+
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as server:
+            server.starttls(context=context)
+            server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
+            server.send_message(message)
+            logger.info(f"Password reset email sent successfully to {email_to}")
+    except Exception as e:
+        logger.error(f"Failed to send password reset email to {email_to}: {e}")
+
 @api_router.post("/auth/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest):
     user = await db.users.find_one({"email": request.email})
@@ -398,8 +441,13 @@ async def forgot_password(request: ForgotPasswordRequest):
     reset_link = f"{frontend_url}/reset-password?token={reset_token}"
     logger.info(f"Password reset link for {user['email']}: {reset_link}") # Log for debugging
 
-    # TODO: Implement actual email sending logic here using SendGrid, SMTP, etc.
-
+    # Send the email
+    await send_password_reset_email(
+        email_to=user["email"],
+        reset_link=reset_link,
+        user_name=user.get("name", "there")
+    )
+    
     return {"message": "If an account with that email exists, a password reset link has been sent."}
 
 @api_router.post("/auth/reset-password")

@@ -131,7 +131,7 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="text-right">
+            <div className="text-right !mt-3">
               <Link
                 to="/forgot-password"
                 className="text-sm text-orange-600 hover:text-orange-700 font-semibold hover:underline"
@@ -143,7 +143,7 @@ export default function Login() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+              className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold rounded-lg transform transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl !mt-4"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
