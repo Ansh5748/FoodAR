@@ -65,7 +65,7 @@ export default function CustomerFeedback() {
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_email: '',
-    rating: 5,
+    rating: '5',
     feedback_type: 'general',
     title: '',
     message: '',
@@ -145,7 +145,7 @@ export default function CustomerFeedback() {
     setFormData({
       customer_name: '',
       customer_email: '',
-      rating: 5,
+      rating: '5',
       feedback_type: 'general',
       title: '',
       message: '',
@@ -156,7 +156,7 @@ export default function CustomerFeedback() {
   };
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
@@ -171,18 +171,28 @@ export default function CustomerFeedback() {
 
     setUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+       // Avoid shadowing the component state `formData`
+      const uploadForm = new FormData();
+      uploadForm.append('file', file);
 
-      const response = await axios.post(`${API}/feedback/upload-image`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // If your backend requires authorization, include token header (adjust key as needed)
+      const headers = {
+        'Content-Type': 'multipart/form-data'
+      };
+      if (user?.token) headers.Authorization = `Bearer ${user.token}`;
+
+      const response = await axios.post(`${API}/feedback/upload-image`, uploadForm, { headers });
+
+      // support multiple possible response fields from different backends
+      const uploadedPath = response.data?.image_url || response.data?.url || response.data?.path;
+      if (!uploadedPath) {
+        console.error('Upload response:', response.data);
+        throw new Error('Unexpected upload response');
+      }
 
       setFormData(prev => ({
         ...prev,
-        image_url: response.data.image_url
+        image_url: uploadedPath
       }));
       toast.success('Image uploaded successfully!');
     } catch (error) {
@@ -241,7 +251,7 @@ export default function CustomerFeedback() {
     setFormData({
       customer_name: feedback.customer_name,
       customer_email: feedback.customer_email,
-      rating: feedback.rating,
+      rating: feedback.rating?.toString() ?? '5',
       feedback_type: feedback.feedback_type,
       title: feedback.title,
       message: feedback.message,
@@ -371,7 +381,7 @@ export default function CustomerFeedback() {
                         Add New Feedback
                       </Button>
                     </DialogTrigger>
-                <DialogContent className="w-[95vw] sm:w-auto sm:max-w-2xl p-4 sm:p-6 max-h-[85vh] overflow-y-auto z-[60]">
+                <DialogContent className="w-[95vw] sm:w-auto sm:max-w-2xl p-4 sm:p-6 max-h-[85vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
                       {editingFeedback ? 'Edit Feedback' : 'Add New Feedback'}
@@ -479,7 +489,7 @@ export default function CustomerFeedback() {
                         {formData.image_url ? (
                           <div className="relative">
                             <img 
-                              src={`${BACKEND_URL}${formData.image_url}`} 
+                              src={formData.image_url?.startsWith('http') ? formData.image_url : `${BACKEND_URL}${formData.image_url}`} 
                               alt="Feedback image" 
                               className="w-full h-48 object-cover rounded-lg border"
                             />
@@ -667,7 +677,7 @@ export default function CustomerFeedback() {
                       {feedback.image_url && (
                         <div className="mb-4">
                           <img 
-                            src={`${BACKEND_URL}${feedback.image_url}`} 
+                            src={feedback.image_url?.startsWith('http') ? feedback.image_url : `${BACKEND_URL}${feedback.image_url}`} 
                             alt="Feedback image" 
                             className="w-full max-w-md h-48 object-cover rounded-lg border"
                           />

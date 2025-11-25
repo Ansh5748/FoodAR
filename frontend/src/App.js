@@ -40,7 +40,7 @@ export const useAuth = () => {
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem('access_token'));
 
   // Configure axios defaults
   useEffect(() => {
@@ -71,9 +71,36 @@ function App() {
   const login = (authData) => {
     setUser(authData.user);
     setToken(authData.access_token);
-    localStorage.setItem('token', authData.access_token);
+    localStorage.setItem("access_token", authData.access_token);
+    localStorage.setItem("refresh_token", authData.refresh_token);
+    localStorage.setItem("user", JSON.stringify(authData.user));
     axios.defaults.headers.common['Authorization'] = `Bearer ${authData.access_token}`;
   };
+  const refreshToken = async () => {
+  const storedRefresh = localStorage.getItem("refresh_token");
+  if (!storedRefresh) return logout();
+
+  try {
+    const res = await axios.post(
+      `${API}/auth/refresh`,
+      {},
+      { headers: { Authorization: `Bearer ${storedRefresh}` } }
+    );
+
+    const newAccess = res.data.access_token;
+
+    setToken(newAccess);
+    localStorage.setItem("access_token", newAccess);
+
+    axios.defaults.headers.common["Authorization"] = `Bearer ${newAccess}`;
+    
+    return newAccess;
+  } catch (error) {
+    logout();
+    return null;
+  }
+};
+
 
   // Helper function to get dashboard route based on user role
   const getDashboardRoute = (user) => {
@@ -89,7 +116,9 @@ function App() {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('token');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user");
     delete axios.defaults.headers.common['Authorization'];
   };
 
@@ -98,6 +127,7 @@ function App() {
     token,
     login,
     logout,
+    refreshToken,
     isAuthenticated: !!user
   };
 
