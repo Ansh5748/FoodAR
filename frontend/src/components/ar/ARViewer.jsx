@@ -40,6 +40,7 @@ export default function ARViewer() {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState('');
+  const [isPreviewContentLoaded, setIsPreviewContentLoaded] = useState(false);
   const sceneRef = useRef(null);
   const [videoAspect, setVideoAspect] = useState(1);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -51,6 +52,7 @@ export default function ARViewer() {
     // These are called inside fetchFoodItem's success path now
     trackScan();
     loadARScript();
+    setIsPreviewContentLoaded(false); // Reset on item change
   }, [foodItemId]);
 
   useEffect(() => {
@@ -221,6 +223,31 @@ useEffect(() => {
   });
 }, [arLoaded]);
 
+useEffect(() => {
+  if (!arLoaded || !window.AFRAME) return;
+
+  if (window.AFRAME.components['content-loader']) return;
+
+  // This component will set the React state when the model/image/video is loaded.
+  window.AFRAME.registerComponent('content-loader', {
+    init: function () {
+      const el = this.el;
+      const setLoaded = () => {
+        // Use a small timeout to ensure rendering completes after loading
+        setTimeout(() => setIsPreviewContentLoaded(true), 100);
+      };
+
+      // Listen for different load events depending on the content type
+      el.addEventListener('model-loaded', setLoaded); // For 3D models
+      el.addEventListener('materialtextureloaded', setLoaded); // For images/videos
+
+      // For simple shapes like a-box that load instantly
+      if (el.tagName.toLowerCase() === 'a-box') {
+        setLoaded();
+      }
+    }
+  });
+}, [arLoaded]);
 
 
  useEffect(() => {
@@ -418,6 +445,7 @@ useEffect(() => {
               auto-scale="target: 1; boost: 2.5"
               animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 5000"
               interactive-rotation="enabled: true"
+              content-loader
             />
           </a-entity>
         );
@@ -429,6 +457,7 @@ useEffect(() => {
             height="4.7"
             material={`shader: flat; src: ${pv || '#fallbackVideo'}`}
             interactive-rotation="enabled: false" 
+            content-loader
             ></a-plane>
         );
       case '2d_image':
@@ -439,6 +468,7 @@ useEffect(() => {
             height="2.5"
             scale="0.5 0.5 0.5"
             interactive-rotation="enabled: false" 
+            content-loader
           />
         );
       default:
@@ -450,6 +480,7 @@ useEffect(() => {
             depth="1"
             color="#fb923c"
             animation="property: rotation; to: 0 405 0; loop: true; dur: 10000"
+            content-loader
           />
         );
     }
@@ -488,6 +519,11 @@ useEffect(() => {
         .App {
           background: transparent !important;
           }
+
+        @keyframes scaleUp {
+          0% { transform: translateX(-50%) scale(0); opacity: 0; }
+          100% { transform: translateX(-50%) scale(1); opacity: 1; }
+        }
       `}
     </style>
     <div className="fixed inset-0 w-full h-full overflow-hidden bg-transparent"
@@ -525,15 +561,34 @@ useEffect(() => {
               </a-entity>
           </a-entity>
 
-            {foodData.food_item.name && (
-            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 text-white font-bold bg-black/30 px-4 py-2 rounded-lg backdrop-blur-sm whitespace-nowrap text-sm sm:text-base md:text-xl max-w-[90vw] overflow-hidden">
-              {foodData.food_item.name.toUpperCase()}
-            </div>
-            )}
             {/* </a-entity> */}
           {/* </a-entity> */}
         </a-scene>
       )}
+
+          {isPreviewContentLoaded && foodData.food_item?.name && (
+            <div className="absolute top-20 left-1/2 z-50 font-bold px-4 py-2 rounded-lg backdrop-blur-sm whitespace-nowrap text-sm sm:text-base md:text-xl max-w-[90vw] overflow-hidden transform transition-transform duration-500"
+            style={{
+              transform: 'translateX(-50%) scale(1)',
+              color: '#fb923c',
+              animation: 'scaleUp 0.6s ease-out forwards',
+            }}
+            >
+              {foodData.food_item?.name.toUpperCase()}
+            </div>
+            )}
+
+          {isPreviewContentLoaded && foodData.food_item?.price && (
+            <div className="absolute bottom-40 left-1/2 z-50 font-bold px-4 py-2 rounded-lg backdrop-blur-sm whitespace-nowrap text-sm sm:text-base md:text-xl max-w-[90vw] overflow-hidden transform transition-transform duration-500"
+            style={{
+              transform: 'translateX(-50%) scale(1)',
+              color: '#22c55e',
+              animation: 'scaleUp 0.6s ease-out forwards',
+            }}
+            >
+              {'Price - ' + getCurrencySymbol(foodData.food_item.currency) + foodData.food_item?.price}
+            </div>
+            )}  
 
       {/* AR Navigation Chevrons */}
       <div className="absolute inset-y-0 left-4 flex items-center z-40">
