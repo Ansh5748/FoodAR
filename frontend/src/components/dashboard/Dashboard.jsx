@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../App';
+import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '../ui/button';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -463,26 +464,31 @@ export default function Dashboard() {
             {selectedRestaurant && masterQrs[selectedRestaurant.id] ? (
               <>
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-orange-100 dark:border-orange-900/20 mb-6">
-                  <img 
-                    src={masterQrs[selectedRestaurant.id].qr_image_url} 
-                    alt="Master Menu QR" 
-                    className="w-48 h-48"
+                  <QRCodeCanvas
+                    id="dashboard-master-qr-canvas"
+                    value={`${window.location.origin}/menu/${selectedRestaurant.id}`}
+                    size={200}
+                    level={"H"}
+                    includeMargin={true}
                   />
                 </div>
                 <div className="text-center space-y-2">
                   <p className="font-semibold text-orange-900 dark:text-orange-400">{selectedRestaurant.name}</p>
                   <p className="text-xs text-orange-700 dark:text-orange-500 max-w-[200px] break-all">
-                    {masterQrs[selectedRestaurant.id].qr_data}
+                    {window.location.origin}/menu/{selectedRestaurant.id}
                   </p>
                 </div>
                 <div className="flex gap-3 mt-6 w-full">
                   <Button 
                     className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
                     onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = masterQrs[selectedRestaurant.id].qr_image_url;
-                      link.download = `${selectedRestaurant.name}_Master_QR.png`;
-                      link.click();
+                      const canvas = document.getElementById('dashboard-master-qr-canvas');
+                      if (canvas) {
+                        const link = document.createElement('a');
+                        link.href = canvas.toDataURL('image/png');
+                        link.download = `${selectedRestaurant.name}_Master_QR.png`;
+                        link.click();
+                      }
                     }}
                   >
                     Download QR
