@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button, buttonVariants } from '../ui/button';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
+  Maximize, 
   RotateCcw, 
   ZoomIn, 
   ZoomOut, 
@@ -18,11 +19,14 @@ import {
   Phone,
   MapPin,
   Star,
-  ShoppingCart,
+  MessageSquare,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShoppingCart
 } from 'lucide-react';
 import axios from 'axios';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import CustomerFeedback from '../feedback/CustomerFeedback';
 import { cn } from '../../lib/utils';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -31,26 +35,41 @@ const API = `${BACKEND_URL}/api`;
 export default function ARViewer() {
   const { foodItemId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const qrIdFromUrl = searchParams.get('qr');
+  
   const [foodData, setFoodData] = useState(null);
   const [restaurantItems, setRestaurantItems] = useState([]);
   const [currentItemIndex, setCurrentItemIndex] = useState(-1);
   const [loading, setLoading] = useState(true);
   const [arLoaded, setArLoaded] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [quantity, setQuantity] = useState(1);
-  const [specialInstructions, setSpecialInstructions] = useState('');
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [isPreviewContentLoaded, setIsPreviewContentLoaded] = useState(false);
   const sceneRef = useRef(null);
   const [videoAspect, setVideoAspect] = useState(1);
+  const [imageAspect, setImageAspect] = useState(1);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const trackedRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     setFoodData(null);
     fetchFoodItem();
-    // These are called inside fetchFoodItem's success path now
-    trackScan();
+    // Only track scan once per foodItemId change
+    if (trackedRef.current !== foodItemId) {
+      trackScan();
+      trackedRef.current = foodItemId;
+    }
     loadARScript();
     setIsPreviewContentLoaded(false); // Reset on item change
   }, [foodItemId]);
@@ -253,18 +272,23 @@ useEffect(() => {
  useEffect(() => {
   if (!previewUrl) return;
 
-  const video = document.createElement("video");
-  video.src = previewUrl;
-
-  const onLoaded = () => {
-    const aspect = video.videoWidth / video.videoHeight;
-    setVideoAspect(aspect);
-  };
-
-  video.addEventListener("loadedmetadata", onLoaded);
-
-  return () => video.removeEventListener("loadedmetadata", onLoaded);
-}, [previewUrl]);
+  const { food_item } = foodData || {};
+  if (food_item?.preview_type === '360_video') {
+    const video = document.createElement("video");
+    video.src = previewUrl;
+    const onLoaded = () => {
+      setVideoAspect(video.videoWidth / video.videoHeight);
+    };
+    video.addEventListener("loadedmetadata", onLoaded);
+    return () => video.removeEventListener("loadedmetadata", onLoaded);
+  } else if (food_item?.preview_type === '2d_image') {
+    const img = new Image();
+    img.src = previewUrl;
+    img.onload = () => {
+      setImageAspect(img.width / img.height);
+    };
+  }
+}, [previewUrl, foodData]);
 
 
   const fetchFoodItem = async () => {
@@ -323,7 +347,7 @@ useEffect(() => {
     try {
       await axios.post(`${API}/analytics/scan`, {
         food_item_id: foodItemId,
-        qr_code_id: 'scanned',
+        qr_code_id: qrIdFromUrl || 'scanned',
         user_agent: navigator.userAgent
       }, { headers: { Authorization: null } });
     } catch (error) {
@@ -396,26 +420,8 @@ useEffect(() => {
     }
   };
 
-  const handleOrder = () => {
-    setShowOrderModal(true);
-  };
-
-  const handlePlaceOrder = () => {
-    // Here you would typically integrate with a payment system or order management
-    const orderData = {
-      food_item_id: foodData.food_item.id,
-      food_name: foodData.food_item.name,
-      quantity: quantity,
-      special_instructions: specialInstructions,
-      total_price: foodData.food_item.price * quantity,
-      restaurant: foodData.restaurant
-    };
-    
-    console.log('Order placed:', orderData);
-    toast.success(`Order placed for ${quantity}x ${foodData.food_item.name}!`);
-    setShowOrderModal(false);
-    setQuantity(1);
-    setSpecialInstructions('');
+  const handleShowDetails = () => {
+    setShowDetailsModal(true);
   };
 
   const getCurrencySymbol = (currency) => {
@@ -431,67 +437,175 @@ useEffect(() => {
   const getPreviewContent = () => {
     if (!foodData) return null;
 
-    const { food_item} = foodData;
+    const { food_item } = foodData;
     const pv = previewUrl;
 
-    switch (food_item.preview_type) {
-      case '3d_model':
-        return (
-          // <a-entity position="0 0 -2">
-          <a-entity position="0 0.5 -2">
-            <a-entity
-              id="interactive-model"
-              gltf-model={pv}
-              auto-scale="target: 1; boost: 2.5"
-              animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 5000"
-              interactive-rotation="enabled: true"
+    // --- REFINED RESPONSIVE SCALING LOGIC ---
+    // Mobile screen is usually around 350-450px wide. 
+    // Desktop screens are much wider.
+    
+    const yPos = 1.6;  // Eye level center height
+    const zPos = -3.0; // Slightly further back for better framing
+    
+    // 1. Mobile Scaling
+    if (isMobile) {
+      // Max dimensions to ensure ~15% margin on sides
+      const maxMobileWidth = 1.7; 
+      const maxMobileHeight = 3.0;
+
+      switch (food_item.preview_type) {
+        case '3d_model':
+          return (
+            <a-entity position={`0 ${yPos} ${zPos}`}>
+              <a-entity
+                id="interactive-model"
+                gltf-model={pv}
+                auto-scale="target: 1.5; boost: 1"
+                animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 5000"
+                interactive-rotation="enabled: true"
+                content-loader
+              />
+            </a-entity>
+          );
+        case '360_video':
+          let w = maxMobileWidth;
+          let h = w / videoAspect;
+          
+          // If height is too tall (e.g., 9:16), cap the height and shrink width
+          if (h > maxMobileHeight) {
+            h = maxMobileHeight * 0.85; // Zoom out bit more for 9:16
+            w = h * videoAspect;
+          }
+          
+          return (
+            <a-plane
+              position={`0 ${yPos} ${zPos}`}
+              width={w}
+              height={h}
+              material={`shader: flat; src: ${pv || '#fallbackVideo'}`}
+              interactive-rotation="enabled: false" 
+              content-loader
+            ></a-plane>
+          );
+        case '2d_image':
+          let iw = maxMobileWidth;
+          let ih = iw / imageAspect;
+          if (ih > maxMobileHeight) {
+            ih = maxMobileHeight * 0.8; // Leave some vertical margin
+            iw = ih * imageAspect;
+          }
+          return (
+            <a-image
+              src={pv || food_item.image_url}
+              position={`0 ${yPos} ${zPos}`}
+              width={iw}
+              height={ih}
+              scale="1 1 1"
+              interactive-rotation="enabled: false" 
               content-loader
             />
-          </a-entity>
-        );
-      case '360_video':
-        return (
-          <a-plane
-            position="0 0 -3"
-            width={4 * videoAspect}
-            height="4.7"
-            material={`shader: flat; src: ${pv || '#fallbackVideo'}`}
-            interactive-rotation="enabled: false" 
-            content-loader
+          );
+        default:
+          return (
+            <a-box
+              position={`0 ${yPos} ${zPos}`}
+              rotation="0 45 0"
+              width="1"
+              height="1"
+              depth="1"
+              color="#fb923c"
+              animation="property: rotation; to: 0 405 0; loop: true; dur: 10000"
+              content-loader
+            />
+          );
+      }
+    } 
+    
+    // 2. Desktop Scaling (Slightly more conservative than mobile)
+    else {
+      const maxDesktopWidth = 4.0;
+      const maxDesktopHeight = 4.0;
+
+      switch (food_item.preview_type) {
+        case '3d_model':
+          return (
+            <a-entity position={`0 ${yPos} ${zPos}`}>
+              <a-entity
+                id="interactive-model"
+                gltf-model={pv}
+                auto-scale="target: 2.5; boost: 1"
+                animation__spin="property: rotation; to: 0 360 0; loop: true; dur: 5000"
+                interactive-rotation="enabled: true"
+                content-loader
+              />
+            </a-entity>
+          );
+        case '360_video':
+          let w = 3.5;
+          let h = w / videoAspect;
+          
+          // Shrink 9:16 videos on desktop
+          if (h > maxDesktopHeight) {
+            h = maxDesktopHeight * 0.85; // Zoom out bit more for 9:16 on desktop
+            w = h * videoAspect;
+          }
+          
+          return (
+            <a-plane
+              position={`0 ${yPos} ${zPos}`}
+              width={w}
+              height={h}
+              material={`shader: flat; src: ${pv || '#fallbackVideo'}`}
+              interactive-rotation="enabled: false" 
+              content-loader
             ></a-plane>
-        );
-      case '2d_image':
-        return (
-          <a-image
-            src={pv || food_item.image_url}
-            width="2.5"
-            height="2.5"
-            scale="0.5 0.5 0.5"
-            interactive-rotation="enabled: false" 
-            content-loader
-          />
-        );
-      default:
-        return (
-          <a-box
-            rotation="0 45 0"
-            width="1"
-            height="1"
-            depth="1"
-            color="#fb923c"
-            animation="property: rotation; to: 0 405 0; loop: true; dur: 10000"
-            content-loader
-          />
-        );
+          );
+        case '2d_image':
+          let iw = 2.8;
+          let ih = iw / imageAspect;
+          if (ih > maxDesktopHeight) {
+            ih = maxDesktopHeight * 0.85;
+            iw = ih * imageAspect;
+          }
+          return (
+            <a-image
+              src={pv || food_item.image_url}
+              position={`0 ${yPos} ${zPos}`}
+              width={iw}
+              height={ih}
+              scale="1 1 1"
+              interactive-rotation="enabled: false" 
+              content-loader
+            />
+          );
+        default:
+          return (
+            <a-box
+              position={`0 ${yPos} ${zPos}`}
+              rotation="0 45 0"
+              width="1.2"
+              height="1.2"
+              depth="1.2"
+              color="#fb923c"
+              animation="property: rotation; to: 0 405 0; loop: true; dur: 10000"
+              content-loader
+            />
+          );
+      }
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
         <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p>Loading AR experience...</p>
+          <div className="relative w-24 h-24 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-white/20 animate-pulse"></div>
+            <div className="absolute inset-0 rounded-full border-t-4 border-white animate-spin"></div>
+            <UtensilsCrossed className="absolute inset-0 m-auto w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Preparing Your Dish</h2>
+          <p className="text-orange-100 animate-pulse">Loading AR experience...</p>
         </div>
       </div>
     );
@@ -518,11 +632,40 @@ useEffect(() => {
       {`
         .App {
           background: transparent !important;
-          }
+          min-height: 100vh;
+          width: 100vw;
+          overflow: hidden;
+        }
+        
+        body {
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          background: transparent !important;
+        }
 
         @keyframes scaleUp {
           0% { transform: translateX(-50%) scale(0); opacity: 0; }
           100% { transform: translateX(-50%) scale(1); opacity: 1; }
+        }
+
+        /* AR.js video resizing fix */
+        .a-canvas {
+          width: 100% !important;
+          height: 100% !important;
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+        
+        video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          position: fixed !important;
+          top: 0;
+          left: 0;
+          z-index: -1;
         }
       `}
     </style>
@@ -534,40 +677,62 @@ useEffect(() => {
         <a-scene
           ref={sceneRef}
           embedded
+          arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; videoTexture: true;"
+          renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; precision: medium; sortObjects: true;"
           vr-mode-ui="enabled: false"
-          renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; colorManagement: true; physicallyCorrectLights: true;"
-          arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false; videoTexture: true;"
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, background: 'transparent', pointerEvents: 'auto', touchAction: 'none', userSelect: 'none' }}
+          gesture-detector
+          style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}
         >
-          <a-assets>
+          <a-assets timeout="10000">
+            {previewUrl && foodData?.food_item?.preview_type === '3d_model' && (
+              <a-asset-item id="food-model" src={previewUrl} crossorigin="anonymous" prefetch="true"></a-asset-item>
+            )}
+            {previewUrl && foodData?.food_item?.preview_type === '360_video' && (
+              <video id="food-video" src={previewUrl} autoPlay loop muted crossorigin="anonymous" playsInline></video>
+            )}
+            {previewUrl && foodData?.food_item?.preview_type === '2d_image' && (
+              <img id="food-image" src={previewUrl} crossorigin="anonymous" />
+            )}
             <video
               id="fallbackVideo"
-              src="https://videos.pexels.com/video-files/2620043/2620043-uhd_2560_1440_25fps.mp4"
-              preload="auto"
+              src="https://cdn.aframe.io/videos/sample.mp4"
+              autoPlay
               loop
               muted
+              crossorigin="anonymous"
               playsInline
-            />
+            ></video>
           </a-assets>
 
-          {/* Camera with content directly attached */}
-          <a-entity camera look-controls="enabled: true" position="0 1.6 0"></a-entity>
+          {/* Lights for 3D Models */}
+          <a-light type="ambient" intensity="0.7"></a-light>
+          <a-light type="directional" position="1 1 1" intensity="0.8"></a-light>
+          <a-light type="directional" position="-1 1 1" intensity="0.5"></a-light>
 
-          {/* This entity will follow the camera */}
-          <a-entity id="follower" camera-follower>
-              {/* The content is a child of the follower, positioned in front of it */}
-              <a-entity id="content-container" position="0 0 -2" rotation="0 0 0">
-                {getPreviewContent()}
-              </a-entity>
+          {/* The content is placed in front of the camera's initial position */}
+          <a-entity id="content-container" position="0 0 0" rotation="0 0 0">
+            {getPreviewContent()}
           </a-entity>
 
-            {/* </a-entity> */}
-          {/* </a-entity> */}
+          <a-entity camera look-controls="enabled: true" wasd-controls="enabled: false"></a-entity>
         </a-scene>
       )}
 
+      {/* Loading overlay for A-Frame components */}
+      {arLoaded && !isPreviewContentLoaded && (
+        <div className="absolute inset-0 z-[100] bg-gradient-to-br from-orange-500/90 to-amber-600/90 flex items-center justify-center backdrop-blur-sm">
+          <div className="text-center text-white">
+            <div className="relative w-20 h-20 mx-auto mb-4">
+              <div className="absolute inset-0 rounded-full border-4 border-white/20 animate-pulse"></div>
+              <div className="absolute inset-0 rounded-full border-t-4 border-white animate-spin"></div>
+            </div>
+            <p className="font-medium">Bringing it to life...</p>
+          </div>
+        </div>
+      )}
+
           {isPreviewContentLoaded && foodData.food_item?.name && (
-            <div className="absolute top-20 left-1/2 z-50 font-bold px-4 py-2 rounded-lg backdrop-blur-sm whitespace-nowrap text-sm sm:text-base md:text-xl max-w-[90vw] overflow-hidden transform transition-transform duration-500"
+            <div className="absolute top-20 left-1/2 z-50 font-bold px-4 py-2 rounded-lg bg-transparent whitespace-nowrap text-sm sm:text-base md:text-xl max-w-[90vw] overflow-hidden transform transition-transform duration-500"
             style={{
               transform: 'translateX(-50%) scale(1)',
               color: '#fb923c',
@@ -579,7 +744,7 @@ useEffect(() => {
             )}
 
           {isPreviewContentLoaded && foodData.food_item?.price && (
-            <div className="absolute bottom-40 left-1/2 z-50 font-bold px-4 py-2 rounded-lg backdrop-blur-sm whitespace-nowrap text-sm sm:text-base md:text-xl max-w-[90vw] overflow-hidden transform transition-transform duration-500"
+            <div className="absolute bottom-40 left-1/2 z-50 font-bold px-4 py-2 rounded-lg bg-transparent whitespace-nowrap text-sm sm:text-base md:text-xl max-w-[90vw] overflow-hidden transform transition-transform duration-500"
             style={{
               transform: 'translateX(-50%) scale(1)',
               color: '#22c55e',
@@ -590,51 +755,12 @@ useEffect(() => {
             </div>
             )}  
 
-      {/* AR Navigation Chevrons */}
-      <div className="absolute inset-y-0 left-4 flex items-center z-40">
-        <button
-          onClick={() => handleNavigation(-1)}
-          disabled={!canNavigatePrev}
-          className={cn(
-            buttonVariants({ variant: 'secondary', size: 'icon' }),
-            'bg-gradient-to-br from-orange-500 to-amber-500 backdrop-blur-md text-white border-white/30 hover:bg-white/60 hover:text-black/80 w-12 h-12 rounded-full disabled:opacity-30 disabled:cursor-not-allowed'
-          )}
-          aria-label="Previous item"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-      </div>
-      <div className="absolute inset-y-0 right-4 flex items-center z-40">
-        <button
-          onClick={() => handleNavigation(1)}
-          disabled={!canNavigateNext}
-          className={cn(
-            buttonVariants({ variant: 'secondary', size: 'icon' }),
-            'bg-gradient-to-br from-orange-500 to-amber-500 backdrop-blur-md text-white border-white/30 hover:bg-white/60 hover:text-black/80 w-12 h-12 rounded-full disabled:opacity-30 disabled:cursor-not-allowed'
-          )}
-          aria-label="Next item"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Loading overlay */}
-      {!arLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-transparent bg-opacity-75 z-50">
-          <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-            <p className="text-lg">Loading AR components...</p>
-            <p className="text-sm text-gray-300 mt-2">Please allow camera access</p>
-          </div>
-        </div>
-      )}
-
       {/* Top Controls */}
       <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-40">
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => window.close()}
+          onClick={() => navigate(-1)}
           className="bg-white/20 backdrop-blur-md text-white border-white/30 hover:bg-white/60 hover:text-black/60"
           aria-label="Go back to previous page"
         >
@@ -642,11 +768,11 @@ useEffect(() => {
           Back
         </Button>
 
-        <div className="flex space-x-2">
+        <div className="flex space-x-2"> 
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => setShowInfo(!showInfo)}
+            onClick={() => setShowDetailsModal(!showDetailsModal)}
             className="bg-white/20 backdrop-blur-md text-white border-white/30 hover:bg-white/60 hover:text-black/60"
           >
             <Info className="w-4 h-4" />
@@ -659,26 +785,55 @@ useEffect(() => {
           >
             <Share2 className="w-4 h-4" />
           </Button>
+
+          {/* Feedback Button */}
+          <Dialog open={showFeedbackDialog} onOpenChange={setShowFeedbackDialog}>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="bg-white/20 backdrop-blur-md text-white border-white/30 hover:bg-white/60 hover:text-black/60"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md p-0 bg-white border-none overflow-hidden rounded-[32px]">
+              <CustomerFeedback 
+                restaurantId={foodData?.restaurant?.id} 
+                foodItemId={foodItemId} 
+                source="ar_viewer" 
+                formOnly={true} 
+                onSuccess={() => setShowFeedbackDialog(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      {/* Food Info Panel */}
-      {showInfo && (
-        <div className="absolute bottom-20 left-4 right-4 z-40">
-          <Card className="bg-white/95 backdrop-blur-md border-white/30 shadow-xl">
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
+      {/* Food Details Modal */}
+      {showDetailsModal && (
+        <div className="absolute bottom-56 left-4 right-4 z-[60] flex items-center justify-center animate-in slide-in-from-bottom-4 duration-300">
+          <Card className="w-full max-w-md bg-white/95 backdrop-blur-md shadow-2xl border-orange-200/50">
+            <CardHeader className="pb-3 relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-gray-600"
+                onClick={() => setShowDetailsModal(false)}
+              >
+                <RotateCcw className="h-4 w-4 rotate-45" />
+              </Button>
+              <div className="flex justify-between items-start pr-6">
                 <div className="flex-1">
-                  <CardTitle className="text-xl font-bold text-gray-900 mb-2">
+                  <CardTitle className="text-xl font-bold text-gray-900 mb-1">
                     {food_item.name}
                   </CardTitle>
                   <div className="flex items-center text-sm text-gray-600 mb-2">
-                    {/* <Building className="w-4 h-4 mr-2" /> */}
                     {restaurant.image_url ? (
-                          <img src={restaurant.image_url.startsWith('/') ? `${BACKEND_URL}${restaurant.image_url}` : restaurant.image_url} alt={restaurant.name} className="w-6 h-6 mr-2 rounded object-cover border" />
+                          <img src={restaurant.image_url.startsWith('/') ? `${BACKEND_URL}${restaurant.image_url}` : restaurant.image_url} alt={restaurant.name} className="w-5 h-5 mr-2 rounded object-cover border" />
                         ) : (
-                          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-500 rounded flex items-center justify-center">
-                            <Building className="w-4 h-4 text-white" />
+                          <div className="w-5 h-5 bg-gradient-to-br from-orange-500 to-amber-500 rounded flex items-center justify-center mr-2">
+                            <Building className="w-3 h-3 text-white" />
                           </div>
                         )}
                     <span className="font-medium">{restaurant?.name}</span>
@@ -697,33 +852,24 @@ useEffect(() => {
                   )}
                 </div>
                 <div className="text-right ml-4">
-                  <div className="flex items-center text-2xl font-bold text-green-600 mb-2">
-                    <span className="text-sm mr-1">{getCurrencySymbol(food_item.currency || 'INR')}</span>
-                    {food_item.price}
-                  </div>
-                  <Badge variant="secondary" className="mb-2">
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0 border border-orange-200 text-orange-600 dark:text-orange-400 mb-2">
                     {food_item.category.replace('_', ' ').toUpperCase()}
                   </Badge>
-                  <div className="flex items-center text-xs text-gray-500">
+                  <div className="flex items-center justify-end text-xl font-bold text-green-600 mb-1">
+                    <span className="text-xs mr-1">{getCurrencySymbol(food_item.currency || 'INR')}</span>
+                    {food_item.price}
+                  </div>
+                  <div className="flex items-center justify-end text-xs text-gray-500">
                     <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-                    <span>4.5 (128 reviews)</span>
+                    <span>4.5</span>
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <p className="text-gray-700 text-sm mb-4 leading-relaxed">
+              <p className="text-gray-700 text-sm leading-relaxed">
                 {food_item.description}
               </p>
-              
-              {/* Order Button */}
-              {/* <Button
-                onClick={handleOrder}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3 rounded-lg shadow-lg"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Order Now - {getCurrencySymbol(food_item.currency || 'INR')}{food_item.price}
-              </Button> */}
             </CardContent>
           </Card>
         </div>
@@ -823,87 +969,6 @@ useEffect(() => {
           </p>
         </div>
       </div>
-
-      {/* Order Modal */}
-      {showOrderModal && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md bg-white shadow-2xl">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-gray-900">
-                Place Your Order
-              </CardTitle>
-              <CardDescription>
-                {food_item.name} from {restaurant?.name}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="font-medium">{food_item.name}</span>
-                <span className="font-bold text-green-600">
-                  {getCurrencySymbol(food_item.currency || 'INR')}{food_item.price}
-                </span>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Quantity</label>
-                <div className="flex items-center space-x-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1}
-                  >
-                    -
-                  </Button>
-                  <span className="w-12 text-center font-medium">{quantity}</span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setQuantity(quantity + 1)}
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Special Instructions (Optional)</label>
-                <textarea
-                  value={specialInstructions}
-                  onChange={(e) => setSpecialInstructions(e.target.value)}
-                  placeholder="Any special requests or modifications..."
-                  className="w-full p-3 border border-gray-300 rounded-lg resize-none"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                <span className="font-medium">Total</span>
-                <span className="text-xl font-bold text-green-600">
-                  {getCurrencySymbol(food_item.currency || 'INR')}{(food_item.price * quantity).toFixed(2)}
-                </span>
-              </div>
-
-              <div className="flex space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowOrderModal(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handlePlaceOrder}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
-                >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Place Order
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
     </>
   );

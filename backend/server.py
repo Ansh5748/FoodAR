@@ -22,13 +22,19 @@ from email.message import EmailMessage
 import smtplib, ssl
 from bson import ObjectId
 
+from contextlib import asynccontextmanager
+from starlette.concurrency import run_in_threadpool
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+# MongoDB connection settings
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db_name = os.environ['DB_NAME']
+
+# Global placeholders - will be initialized in lifespan
+client: AsyncIOMotorClient = None
+db = None
 
 # Security
 security = HTTPBearer()
@@ -44,9 +50,125 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
 EMAIL_USERNAME = os.environ.get("EMAIL_USERNAME")
 EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME")
-EMAIL_FROM_ADDRESS = os.environ.get("EMAIL_FROM_ADDRESS")
+# Set up logging first
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-app = FastAPI(title="FoodAR API", description="AR-QR Restaurant Management System")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global client, db
+    # Initialize MongoDB client with settings optimized for Windows development
+    # and connection pool management
+    client = AsyncIOMotorClient(
+        mongo_url,
+        maxPoolSize=20,
+        minPoolSize=5,
+        connectTimeoutMS=5000,
+        serverSelectionTimeoutMS=5000,
+        # Reducing socket timeout can help clear out stale connections faster on Windows
+        socketTimeoutMS=10000,
+        waitQueueTimeoutMS=5000
+    )
+    db = client[db_name]
+    app.state.db = db
+    
+    # Run startup tasks
+    await create_indexes()
+    await sync_restaurant_master_qrs()
+    await seed_food_library()
+    await ensure_super_admin()
+    
+    logger.info("MongoDB client connected and database initialized")
+    
+    yield
+    
+    # Shutdown logic
+    client.close()
+    logger.info("MongoDB client connection closed")
+
+async def create_indexes():
+    """Create MongoDB indexes for performance optimization"""
+    try:
+        # Users collection
+        await db.users.create_index("email", unique=True)
+        await db.users.create_index("id", unique=True)
+        
+        # Restaurants collection
+        await db.restaurants.create_index("id", unique=True)
+        await db.restaurants.create_index("owner_id")
+        
+        # Food items collection
+        await db.food_items.create_index("id", unique=True)
+        await db.food_items.create_index("restaurant_id")
+        await db.food_items.create_index("category")
+        
+        # QR Codes collection
+        await db.qr_codes.create_index("id", unique=True)
+        await db.qr_codes.create_index("food_item_id")
+        await db.qr_codes.create_index("restaurant_id")
+        
+        # Analytics collection
+        await db.analytics.create_index("food_item_id")
+        await db.analytics.create_index("qr_code_id")
+        await db.analytics.create_index("timestamp")
+        await db.analytics.create_index("event_type")
+        
+        # Feedback collection
+        await db.feedback.create_index("id", unique=True)
+        await db.feedback.create_index("restaurant_id")
+        await db.feedback.create_index("food_item_id")
+        
+        logger.info("Database indexes created successfully")
+    except Exception as e:
+        logger.error(f"Error creating indexes: {e}")
+
+async def sync_restaurant_master_qrs():
+    """Ensure all restaurants have a master_qr_id set"""
+    try:
+        restaurants = await db.restaurants.find({"master_qr_id": {"$exists": False}}).to_list(1000)
+        for rest in restaurants:
+            qr = await db.qr_codes.find_one({"restaurant_id": rest["id"], "food_item_id": None})
+            if qr:
+                await db.restaurants.update_one({"id": rest["id"]}, {"$set": {"master_qr_id": qr["id"]}})
+                logger.info(f"Synced master_qr_id for restaurant: {rest['name']}")
+    except Exception as e:
+        logger.error(f"Error syncing master QRs: {e}")
+
+async def ensure_super_admin():
+    """Create super admin if not exists"""
+    super_admin_email = "divyanshgupta5748@gmail.com"
+    user = await db.users.find_one({"email": super_admin_email})
+    if not user:
+        super_admin = {
+            "id": str(uuid.uuid4()),
+            "email": super_admin_email,
+            "name": "Super Admin",
+            "role": "super_admin",
+            "permissions": ["full_super_admin_access"],
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc),
+            "password_hash": get_password_hash("#Divy5748Ansh")
+        }
+        await db.users.insert_one(super_admin)
+        logger.info(f"Super admin created: {super_admin_email}")
+    else:
+        # Ensure existing super admin has correct permissions
+        await db.users.update_one(
+            {"email": super_admin_email},
+            {
+                "$set": {
+                    "role": "super_admin",
+                    "permissions": ["full_super_admin_access"],
+                    "is_active": True
+                }
+            }
+        )
+
+app = FastAPI(
+    title="FoodAR API", 
+    description="AR-QR Restaurant Management System",
+    lifespan=lifespan
+)
 api_router = APIRouter(prefix="/api")
 
 
@@ -109,6 +231,7 @@ class Restaurant(BaseModel):
     phone: Optional[str] = None
     image_url: Optional[str] = None
     owner_id: str
+    master_qr_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class RestaurantCreate(BaseModel):
@@ -144,7 +267,8 @@ class FoodItemCreate(BaseModel):
 
 class QRCodeModel(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    food_item_id: str
+    food_item_id: Optional[str] = None
+    restaurant_id: Optional[str] = None
     qr_data: str
     qr_image_url: str
     scan_count: int = 0
@@ -167,21 +291,25 @@ class FoodLibraryItem(BaseModel):
 
 class AnalyticsEvent(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    event_type: str  # qr_scan, ar_view
-    food_item_id: str
+    event_type: str  # qr_scan, ar_view, menu_view
+    food_item_id: Optional[str] = None
+    restaurant_id: Optional[str] = None
     qr_code_id: Optional[str] = None
     user_agent: Optional[str] = None
     ip_address: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class AnalyticsScanRequest(BaseModel):
-    food_item_id: str
+    food_item_id: Optional[str] = None
+    restaurant_id: Optional[str] = None
     qr_code_id: str
     user_agent: Optional[str] = None
 
 class Feedback(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     restaurant_id: str
+    food_item_id: Optional[str] = None
+    food_item_name: Optional[str] = None # Added field to store item name at time of feedback
     customer_name: str
     customer_email: Optional[str] = None
     rating: int = Field(ge=1, le=5)
@@ -189,12 +317,15 @@ class Feedback(BaseModel):
     title: str
     message: str
     image_url: Optional[str] = None
+    source: Optional[str] = "management"
     is_public: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
 
 class FeedbackCreate(BaseModel):
     restaurant_id: str
+    food_item_id: Optional[str] = None
+    food_item_name: Optional[str] = None
     customer_name: str
     customer_email: Optional[str] = None
     rating: int = Field(ge=1, le=5)
@@ -202,6 +333,7 @@ class FeedbackCreate(BaseModel):
     title: str
     message: str
     image_url: Optional[str] = None
+    source: Optional[str] = "management"
     is_public: bool = True
 
 class AdminInvite(BaseModel):
@@ -309,7 +441,7 @@ async def register(user_data: UserCreate):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Hash password and create user
-    hashed_password = get_password_hash(user_data.password)
+    hashed_password = await run_in_threadpool(get_password_hash, user_data.password)
     user_dict = user_data.dict()
     user_dict.pop("password")
     user_obj = User(**user_dict)
@@ -328,7 +460,11 @@ async def register(user_data: UserCreate):
 @api_router.post("/auth/login", response_model=Dict[str, Any])
 async def login(user_data: UserLogin):
     user = await db.users.find_one({"email": user_data.email})
-    if not user or not verify_password(user_data.password, user["password_hash"]):
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+    
+    is_valid = await run_in_threadpool(verify_password, user_data.password, user["password_hash"])
+    if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid email or password")
     
     # Special handling for super admin
@@ -380,6 +516,14 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(secu
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
+def send_smtp_email(message):
+    """Blocking SMTP email sending function to be run in a threadpool"""
+    context = ssl.create_default_context()
+    with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as server:
+        server.starttls(context=context)
+        server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
+        server.send_message(message)
+
 async def send_password_reset_email(email_to: str, reset_link: str, user_name: str):
     if not all([EMAIL_HOST, EMAIL_PORT, EMAIL_USERNAME, EMAIL_PASSWORD, EMAIL_FROM_ADDRESS]):
         logger.error("Email configuration is incomplete. Cannot send password reset email.")
@@ -411,12 +555,8 @@ async def send_password_reset_email(email_to: str, reset_link: str, user_name: s
     message.add_alternative(html_content, subtype="html")
 
     try:
-        context = ssl.create_default_context()
-        with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as server:
-            server.starttls(context=context)
-            server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
-            server.send_message(message)
-            logger.info(f"Password reset email sent successfully to {email_to}")
+        await run_in_threadpool(send_smtp_email, message)
+        logger.info(f"Password reset email sent successfully to {email_to}")
     except Exception as e:
         logger.error(f"Failed to send password reset email to {email_to}: {e}")
 
@@ -458,7 +598,7 @@ async def reset_password(request: ResetPasswordRequest):
             raise HTTPException(status_code=400, detail="Invalid token type")
         
         email = payload["sub"]
-        new_password_hash = get_password_hash(request.new_password)
+        new_password_hash = await run_in_threadpool(get_password_hash, request.new_password)
         await db.users.update_one({"email": email}, {"$set": {"password_hash": new_password_hash}})
         return {"message": "Password has been reset successfully."}
     except jwt.ExpiredSignatureError:
@@ -482,6 +622,23 @@ async def create_restaurant(restaurant_data: RestaurantCreate, current_user: Use
     restaurant_dict = restaurant_data.dict()
     restaurant_dict["owner_id"] = current_user.id
     restaurant_obj = Restaurant(**restaurant_dict)
+    
+    # Generate Master QR code for the restaurant menu
+    frontend_url = os.environ.get("FRONTEND_URL", "https://foodar-menu.preview.emergentagent.com")
+    qr_data = f"{frontend_url}/menu/{restaurant_obj.id}"
+    qr_image = generate_qr_code(qr_data)
+    
+    qr_code_obj = QRCodeModel(
+        restaurant_id=restaurant_obj.id,
+        qr_data=qr_data,
+        qr_image_url=qr_image
+    )
+    
+    await db.qr_codes.insert_one(qr_code_obj.dict())
+    
+    # Update restaurant object with master_qr_id before saving
+    restaurant_obj.master_qr_id = qr_code_obj.id
+    
     await db.restaurants.insert_one(restaurant_obj.dict())
     return restaurant_obj
 
@@ -615,6 +772,14 @@ async def get_restaurant_food_items_public(restaurant_id: str):
     food_items = await db.food_items.find({"restaurant_id": restaurant_id}).to_list(1000)
     return [FoodItem(**item) for item in food_items]
 
+@api_router.get("/public/restaurants/{restaurant_id}", response_model=Restaurant)
+async def get_restaurant_public(restaurant_id: str):
+    """Public endpoint to get restaurant details."""
+    restaurant = await db.restaurants.find_one({"id": restaurant_id})
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    return Restaurant(**restaurant)
+
 @api_router.put("/restaurants/{restaurant_id}/food-items/{food_item_id}", response_model=FoodItem)
 async def update_food_item(
     restaurant_id: str,
@@ -703,6 +868,24 @@ async def get_qr_code(food_item_id: str, current_user: User = Depends(get_curren
         raise HTTPException(status_code=404, detail="QR code not found")
     return QRCodeModel(**qr_code)
 
+@api_router.get("/restaurants/{restaurant_id}/master-qr", response_model=QRCodeModel)
+async def get_restaurant_master_qr(restaurant_id: str, current_user: User = Depends(get_current_user)):
+    qr_code = await db.qr_codes.find_one({"restaurant_id": restaurant_id})
+    if not qr_code:
+        # Generate it if it doesn't exist (for older restaurants)
+        frontend_url = os.environ.get("FRONTEND_URL", "https://foodar-menu.preview.emergentagent.com")
+        qr_data = f"{frontend_url}/menu/{restaurant_id}"
+        qr_image = generate_qr_code(qr_data)
+        
+        qr_code_obj = QRCodeModel(
+            restaurant_id=restaurant_id,
+            qr_data=qr_data,
+            qr_image_url=qr_image
+        )
+        await db.qr_codes.insert_one(qr_code_obj.dict())
+        return qr_code_obj
+    return QRCodeModel(**qr_code)
+
 # Food Library routes
 @api_router.get("/food-library", response_model=List[FoodLibraryItem])
 async def get_food_library(category: Optional[str] = None, search: Optional[str] = None):
@@ -773,16 +956,28 @@ async def get_food_library(category: Optional[str] = None, search: Optional[str]
 # Analytics routes
 @api_router.post("/analytics/scan")
 async def track_qr_scan(request: AnalyticsScanRequest):
-    # Update scan count
-    await db.qr_codes.update_one(
-        {"id": request.qr_code_id},
-        {"$inc": {"scan_count": 1}}
-    )
+    # Update scan count in qr_codes collection
+    if request.qr_code_id and request.qr_code_id != 'scanned':
+        await db.qr_codes.update_one(
+            {"id": request.qr_code_id},
+            {"$inc": {"scan_count": 1}}
+        )
+    elif request.food_item_id:
+        # If scanned from AR viewer directly, increment the associated QR code count if it exists
+        await db.qr_codes.update_one(
+            {"food_item_id": request.food_item_id},
+            {"$inc": {"scan_count": 1}}
+        )
     
     # Track analytics event
+    event_type = "qr_scan"
+    if not request.food_item_id and request.restaurant_id:
+        event_type = "menu_view"
+        
     event = AnalyticsEvent(
-        event_type="qr_scan",
+        event_type=event_type,
         food_item_id=request.food_item_id,
+        restaurant_id=request.restaurant_id,
         qr_code_id=request.qr_code_id,
         user_agent=request.user_agent
     )
@@ -790,7 +985,11 @@ async def track_qr_scan(request: AnalyticsScanRequest):
     return {"status": "success"}
 
 @api_router.get("/analytics/restaurant/{restaurant_id}")
-async def get_restaurant_analytics(restaurant_id: str, current_user: User = Depends(get_current_user)):
+async def get_restaurant_analytics(
+    restaurant_id: str, 
+    days: Optional[int] = 7,
+    current_user: User = Depends(get_current_user)
+):
     # Verify restaurant ownership
     restaurant = await db.restaurants.find_one({"id": restaurant_id, "owner_id": current_user.id})
     if not restaurant:
@@ -800,19 +999,85 @@ async def get_restaurant_analytics(restaurant_id: str, current_user: User = Depe
     food_items = await db.food_items.find({"restaurant_id": restaurant_id}).to_list(1000)
     food_item_ids = [item["id"] for item in food_items]
     
-    # Get analytics data
-    analytics = await db.analytics.find({"food_item_id": {"$in": food_item_ids}}).to_list(1000)
+    # Calculate time filter
+    start_date = None
+    if days and days > 0:
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
     
-    # Get QR code scan counts
+    # Get period scan counts for each item using aggregation
+    period_match = {"food_item_id": {"$in": food_item_ids}}
+    if start_date:
+        period_match["timestamp"] = {"$gte": start_date}
+    
+    period_scans_cursor = db.analytics.aggregate([
+        {"$match": period_match},
+        {"$group": {"_id": "$food_item_id", "count": {"$sum": 1}}}
+    ])
+    item_scans_period = {res["_id"]: res["count"] async for res in period_scans_cursor}
+    total_period_scans = sum(item_scans_period.values())
+
+    # Get lifetime scan counts for each item using aggregation
+    lifetime_scans_cursor = db.analytics.aggregate([
+        {"$match": {"food_item_id": {"$in": food_item_ids}}},
+        {"$group": {"_id": "$food_item_id", "count": {"$sum": 1}}}
+    ])
+    item_scans_lifetime = {res["_id"]: res["count"] async for res in lifetime_scans_cursor}
+    total_lifetime_scans = sum(item_scans_lifetime.values())
+
+    # Get Master QR scans filtered by time
+    master_qr = await db.qr_codes.find_one({"restaurant_id": restaurant_id})
+    master_qr_scans_period = 0
+    if master_qr:
+        master_match = {
+            "qr_code_id": master_qr["id"],
+            "event_type": "menu_view"
+        }
+        if start_date:
+            master_match["timestamp"] = {"$gte": start_date}
+        master_qr_scans_period = await db.analytics.count_documents(master_match)
+
+    # Get QR code details for food items
     qr_codes = await db.qr_codes.find({"food_item_id": {"$in": food_item_ids}}).to_list(1000)
+            
+    # Attach food item details to QR data
+    qr_with_details = []
+    processed_item_ids = set()
     
-    total_scans = sum(qr["scan_count"] for qr in qr_codes)
+    for qr in qr_codes:
+        fid = qr.get("food_item_id")
+        item = next((i for i in food_items if i["id"] == fid), None)
+        if item:
+            qr_data = serialize_doc(qr)
+            qr_data["food_item_name"] = item["name"]
+            qr_data["food_item_price"] = item["price"]
+            qr_data["food_item_currency"] = item.get("currency", "INR")
+            qr_data["food_item_category"] = item["category"]
+            qr_data["period_scan_count"] = item_scans_period.get(fid, 0)
+            qr_data["scan_count"] = item_scans_lifetime.get(fid, 0)
+            qr_with_details.append(qr_data)
+            processed_item_ids.add(fid)
+            
+    # Also add items that don't have QR codes yet
+    for item in food_items:
+        if item["id"] not in processed_item_ids:
+            qr_with_details.append({
+                "id": f"no-qr-{item['id']}",
+                "food_item_id": item["id"],
+                "food_item_name": item["name"],
+                "food_item_price": item["price"],
+                "food_item_currency": item.get("currency", "INR"),
+                "food_item_category": item["category"],
+                "period_scan_count": item_scans_period.get(item["id"], 0),
+                "scan_count": item_scans_lifetime.get(item["id"], 0)
+            })
     
     return {
-        "total_scans": total_scans,
+        "total_scans": total_lifetime_scans,
+        "period_scans": total_period_scans,
+        "master_qr_scans": master_qr_scans_period,
         "total_food_items": len(food_items),
-        "analytics_events": [serialize_doc(event) for event in analytics],
-        "qr_codes": [serialize_doc(qr) for qr in qr_codes]
+        "qr_codes": qr_with_details,
+        "daily_stats": [] 
     }
 
 @admin_router.post("/members/invite", dependencies=[Depends(require_super_admin)])
@@ -843,6 +1108,7 @@ async def create_admin(admin_data: AdminCreate):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Create a new admin user with password
+    hashed_password = await run_in_threadpool(get_password_hash, admin_data.password)
     new_admin = {
         "id": str(uuid.uuid4()),
         "email": admin_data.email,
@@ -851,7 +1117,7 @@ async def create_admin(admin_data: AdminCreate):
         "permissions": admin_data.permissions,
         "is_active": True,
         "created_at": datetime.now(timezone.utc),
-        "password_hash": get_password_hash(admin_data.password),
+        "password_hash": hashed_password,
         "password": admin_data.password  # Store plain text password for super admin to see
     }
     await db.users.insert_one(new_admin)
@@ -895,7 +1161,7 @@ async def update_admin_details(user_id: str, details: AdminDetailsUpdate):
     
     # Only update password if provided
     if details.password:
-        update_data["password_hash"] = get_password_hash(details.password)
+        update_data["password_hash"] = await run_in_threadpool(get_password_hash, details.password)
         update_data["password"] = details.password  # Store plain text for super admin to see
     
     await db.users.update_one(
@@ -968,10 +1234,6 @@ async def get_system_stats():
 def root():
     return {"message": "DishLook Backend running successfully 🚀"}
 
-# Include router
-app.include_router(api_router)
-app.include_router(admin_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -980,41 +1242,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Seed food library on startup
-@app.on_event("startup")
-async def startup_db_client():
-    # Seed food library
-    await seed_food_library()
-    # Create super admin if not exists
-    super_admin_email = "divyanshgupta5748@gmail.com"
-    user = await db.users.find_one({"email": super_admin_email})
-    if not user:
-        super_admin = {
-            "id": str(uuid.uuid4()),
-            "email": super_admin_email,
-            "name": "Super Admin",
-            "role": "super_admin",
-            "permissions": ["full_super_admin_access"],
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc),
-            "password_hash": get_password_hash("#Divy5748Ansh")
-        }
-        await db.users.insert_one(super_admin)
-        logger.info(f"Super admin created: {super_admin_email}")
-    else:
-        # Ensure existing super admin has correct permissions
-        await db.users.update_one(
-            {"email": super_admin_email},
-            {
-                "$set": {
-                    "role": "super_admin",
-                    "permissions": ["full_super_admin_access"],
-                    "is_active": True
-                }
-            }
-        )
+# Include routers after ALL routes are defined
+app.include_router(api_router)
+app.include_router(admin_router)
 
-@app.on_event("startup")
 async def seed_food_library():
     """Seed the database with sample food library items"""
     existing_count = await db.food_library.count_documents({})
@@ -1170,6 +1401,25 @@ async def seed_food_library():
                 count_now += 1
 
 # Feedback routes
+@api_router.post("/public/feedback/upload-image")
+async def upload_public_feedback_image(file: UploadFile = File(...)):
+    # Validate file type
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Generate unique filename
+    file_extension = file.filename.split('.')[-1]
+    filename = f"feedback_{uuid.uuid4()}.{file_extension}"
+    file_path = uploads_dir / filename
+    
+    # Save file
+    with open(file_path, "wb") as buffer:
+        content = await file.read()
+        buffer.write(content)
+    
+    # Return URL
+    return {"image_url": f"/uploads/{filename}"}
+
 @api_router.post("/feedback/upload-image")
 async def upload_feedback_image(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
     # Validate file type
@@ -1189,10 +1439,55 @@ async def upload_feedback_image(file: UploadFile = File(...), current_user: User
     # Return URL
     return {"image_url": f"/uploads/{filename}"}
 
+# Public Feedback routes (no auth required)
+@api_router.post("/public/feedback", response_model=Feedback)
+async def create_public_feedback(feedback_data: FeedbackCreate):
+    # Verify restaurant exists
+    restaurant = await db.restaurants.find_one({"id": feedback_data.restaurant_id})
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    
+    feedback_dict = feedback_data.dict()
+    feedback_obj = Feedback(**feedback_dict)
+    
+    await db.feedback.insert_one(feedback_obj.dict())
+    return feedback_obj
+
+@api_router.get("/public/feedback/restaurant/{restaurant_id}", response_model=List[Feedback])
+async def get_public_restaurant_feedback(restaurant_id: str):
+    # Verify restaurant exists
+    restaurant = await db.restaurants.find_one({"id": restaurant_id})
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    
+    feedbacks = await db.feedback.find({"restaurant_id": restaurant_id, "is_public": True}).sort("created_at", -1).to_list(1000)
+    return [Feedback(**feedback) for feedback in feedbacks]
+
+@api_router.get("/public/restaurants/{id}", response_model=Restaurant)
+async def get_public_restaurant(id: str):
+    restaurant = await db.restaurants.find_one({"id": id})
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    return Restaurant(**restaurant)
+
+@api_router.get("/public/restaurants/{restaurant_id}/food-items", response_model=List[FoodItem])
+async def get_public_restaurant_food_items(restaurant_id: str):
+    # Verify restaurant exists
+    restaurant = await db.restaurants.find_one({"id": restaurant_id})
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    
+    food_items = await db.food_items.find({"restaurant_id": restaurant_id}).to_list(1000)
+    return [FoodItem(**item) for item in food_items]
+
 @api_router.post("/feedback", response_model=Feedback)
 async def create_feedback(feedback_data: FeedbackCreate, current_user: User = Depends(get_current_user)):
-    # Verify restaurant ownership
-    restaurant = await db.restaurants.find_one({"id": feedback_data.restaurant_id, "owner_id": current_user.id})
+    # Verify restaurant ownership or super admin role
+    query = {"id": feedback_data.restaurant_id}
+    if current_user.role != "super_admin":
+        query["owner_id"] = current_user.id
+        
+    restaurant = await db.restaurants.find_one(query)
     if not restaurant:
         # Check if restaurant exists but user doesn't own it
         restaurant_exists = await db.restaurants.find_one({"id": feedback_data.restaurant_id})
@@ -1209,8 +1504,12 @@ async def create_feedback(feedback_data: FeedbackCreate, current_user: User = De
 
 @api_router.get("/feedback/restaurant/{restaurant_id}", response_model=List[Feedback])
 async def get_restaurant_feedback(restaurant_id: str, current_user: User = Depends(get_current_user)):
-    # Verify restaurant ownership
-    restaurant = await db.restaurants.find_one({"id": restaurant_id, "owner_id": current_user.id})
+    # Verify restaurant ownership or super admin role
+    query = {"id": restaurant_id}
+    if current_user.role != "super_admin":
+        query["owner_id"] = current_user.id
+        
+    restaurant = await db.restaurants.find_one(query)
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
     
@@ -1223,12 +1522,16 @@ async def update_feedback(
     feedback_data: FeedbackCreate,
     current_user: User = Depends(get_current_user)
 ):
-    # Verify feedback exists and restaurant ownership
+    # Verify feedback exists and restaurant ownership or super admin role
     existing_feedback = await db.feedback.find_one({"id": feedback_id})
     if not existing_feedback:
         raise HTTPException(status_code=404, detail="Feedback not found")
     
-    restaurant = await db.restaurants.find_one({"id": existing_feedback["restaurant_id"], "owner_id": current_user.id})
+    query = {"id": existing_feedback["restaurant_id"]}
+    if current_user.role != "super_admin":
+        query["owner_id"] = current_user.id
+        
+    restaurant = await db.restaurants.find_one(query)
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
     
@@ -1247,12 +1550,16 @@ async def update_feedback(
 
 @api_router.delete("/feedback/{feedback_id}")
 async def delete_feedback(feedback_id: str, current_user: User = Depends(get_current_user)):
-    # Verify feedback exists and restaurant ownership
+    # Verify feedback exists and restaurant ownership or super admin role
     existing_feedback = await db.feedback.find_one({"id": feedback_id})
     if not existing_feedback:
         raise HTTPException(status_code=404, detail="Feedback not found")
     
-    restaurant = await db.restaurants.find_one({"id": existing_feedback["restaurant_id"], "owner_id": current_user.id})
+    query = {"id": existing_feedback["restaurant_id"]}
+    if current_user.role != "super_admin":
+        query["owner_id"] = current_user.id
+        
+    restaurant = await db.restaurants.find_one(query)
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
     
@@ -1261,9 +1568,18 @@ async def delete_feedback(feedback_id: str, current_user: User = Depends(get_cur
     
     return {"message": "Feedback deleted successfully"}
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+@app.get("/")
+def root():
+    return {"message": "DishLook Backend running successfully 🚀"}
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers after ALL routes are defined
+app.include_router(api_router)
+app.include_router(admin_router)

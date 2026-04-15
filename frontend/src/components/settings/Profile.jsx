@@ -95,15 +95,15 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:bg-background dark:bg-none">
-      <div className="bg-white/80 backdrop-blur-sm border-b border-orange-100 sticky top-0 z-10">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-background dark:via-background dark:to-muted">
+      <div className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-b border-orange-100 dark:border-border sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center py-6">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate(-1)}
-              className="mr-4 border-orange-200 text-orange-700 hover:bg-orange-50"
+              className="mr-4 border-orange-200 dark:border-border text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -112,7 +112,7 @@ export default function Profile() {
               <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
                 My Profile
               </h1>
-              <p className="text-gray-600">Manage your restaurant details</p>
+              <p className="text-gray-600 dark:text-muted-foreground">Manage your restaurant details</p>
             </div>
           </div>
         </div>
@@ -120,13 +120,13 @@ export default function Profile() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {primary && (
-          <Card className="bg-white/80 backdrop-blur-sm border-orange-100">
+          <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <label className="mr-4 cursor-pointer relative group">
                     {primary?.image_url ? (
-                      <img src={primary.image_url.startsWith('/') ? `${BACKEND_URL}${primary.image_url}` : primary.image_url} alt="Restaurant" className="w-12 h-12 rounded-lg object-cover border" />
+                      <img src={primary.image_url.startsWith('/') ? `${BACKEND_URL}${primary.image_url}` : primary.image_url} alt="Restaurant" className="w-12 h-12 rounded-lg object-cover border dark:border-border" />
                     ) : (
                       <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center">
                         <Building className="w-6 h-6 text-white" />
@@ -136,12 +136,12 @@ export default function Profile() {
                     <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black/40 text-white text-[10px] rounded-lg">Change</span>
                   </label>
                   <div>
-                    <CardTitle>{primary.name}</CardTitle>
-                    <CardDescription>Default restaurant</CardDescription>
+                    <CardTitle className="dark:text-foreground">{primary.name}</CardTitle>
+                    <CardDescription className="dark:text-muted-foreground">Default restaurant</CardDescription>
                   </div>
                 </div>
                 {isAdmin && (
-                  <Button variant="outline" size="sm" onClick={() => handleSetDefault(primary.id)}>
+                  <Button variant="outline" size="sm" onClick={() => handleSetDefault(primary.id)} className="dark:border-border dark:text-foreground">
                     <Star className="w-4 h-4 mr-2" /> Set as default
                   </Button>
                 )}
@@ -151,69 +151,69 @@ export default function Profile() {
               {!editing ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-semibold text-gray-700">Description</Label>
-                    <div className="flex items-start mt-1 text-gray-800">
-                      <FileText className="w-4 h-4 text-gray-400 mr-2 mt-1" />
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-foreground">Description</Label>
+                    <div className="flex items-start mt-1 text-gray-800 dark:text-muted-foreground">
+                      <FileText className="w-4 h-4 text-gray-400 dark:text-muted-foreground mr-2 mt-1" />
                       <p>{primary.description || '—'}</p>
                     </div>
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold text-gray-700">Phone</Label>
-                    <div className="flex items-center mt-1 text-gray-800">
-                      <Phone className="w-4 h-4 text-gray-400 mr-2" />
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-foreground">Phone</Label>
+                    <div className="flex items-center mt-1 text-gray-800 dark:text-muted-foreground">
+                      <Phone className="w-4 h-4 text-gray-400 dark:text-muted-foreground mr-2" />
                       <p>{primary.phone || '—'}</p>
                     </div>
                   </div>
                   <div className="md:col-span-2">
-                    <Label className="text-sm font-semibold text-gray-700">Address</Label>
-                    <div className="flex items-center mt-1 text-gray-800">
-                      <MapPin className="w-4 h-4 text-gray-400 mr-2" />
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-foreground">Address</Label>
+                    <div className="flex items-center mt-1 text-gray-800 dark:text-muted-foreground">
+                      <MapPin className="w-4 h-4 text-gray-400 dark:text-muted-foreground mr-2" />
                       <p>{primary.address || '—'}</p>
                     </div>
                   </div>
                   <div className="md:col-span-2 flex items-center justify-between pt-2">
                     <div className="flex items-center space-x-3">
                       {primary.image_url && (
-                        <img src={primary.image_url.startsWith('/') ? `${BACKEND_URL}${primary.image_url}` : primary.image_url} alt="Restaurant" className="w-16 h-16 rounded object-cover border" />
+                        <img src={primary.image_url.startsWith('/') ? `${BACKEND_URL}${primary.image_url}` : primary.image_url} alt="Restaurant" className="w-16 h-16 rounded object-cover border dark:border-border" />
                       )}
                       <div>
-                        <Label className="text-sm font-semibold text-gray-700">Logo / Image</Label>
-                        <p className="text-gray-600 text-sm">Upload a cover or logo image</p>
+                        <Label className="text-sm font-semibold text-gray-700 dark:text-foreground">Logo / Image</Label>
+                        <p className="text-gray-600 dark:text-muted-foreground text-sm">Upload a cover or logo image</p>
                       </div>
                     </div>
                     <label className="cursor-pointer">
                       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])} />
-                      <Button variant="outline" disabled={imageUploading} onClick={() => fileInputRef.current?.click()}>
+                      <Button variant="outline" disabled={imageUploading} onClick={() => fileInputRef.current?.click()} className="dark:border-border dark:text-foreground">
                         {imageUploading ? 'Uploading...' : (primary?.image_url ? 'Update Image' : 'Add Image')}
                       </Button>
                     </label>
                   </div>
                   <div className="md:col-span-2">
-                    <Button variant="outline" onClick={() => setEditing(true)}>Edit</Button>
+                    <Button variant="outline" onClick={() => setEditing(true)} className="dark:border-border dark:text-foreground">Edit</Button>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Name</Label>
-                      <Input id="name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                      <Label htmlFor="name" className="dark:text-foreground">Name</Label>
+                      <Input id="name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="dark:bg-muted dark:border-border dark:text-foreground" />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input id="phone" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '') })} />
+                      <Label htmlFor="phone" className="dark:text-foreground">Phone</Label>
+                      <Input id="phone" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/[^0-9+\-\s()]/g, '') })} className="dark:bg-muted dark:border-border dark:text-foreground" />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="address">Address</Label>
-                      <Input id="address" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
+                      <Label htmlFor="address" className="dark:text-foreground">Address</Label>
+                      <Input id="address" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} className="dark:bg-muted dark:border-border dark:text-foreground" />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="description">Description</Label>
-                      <textarea id="description" className="w-full p-3 border rounded" rows={3} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+                      <Label htmlFor="description" className="dark:text-foreground">Description</Label>
+                      <textarea id="description" className="w-full p-3 border rounded dark:bg-muted dark:border-border dark:text-foreground" rows={3} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
                     </div>
                   </div>
                   <div className="flex justify-end space-x-3">
-                    <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => setEditing(false)} className="dark:border-border dark:text-foreground">Cancel</Button>
                     <Button onClick={handleSave}>Save Changes</Button>
                   </div>
                 </div>
@@ -225,18 +225,18 @@ export default function Profile() {
         {isAdmin && restaurants.length > 1 && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {restaurants.filter(r => r.id !== primary?.id).map(r => (
-              <Card key={r.id} className="bg-white/80 backdrop-blur-sm border-orange-100">
+              <Card key={r.id} className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold text-gray-900">{r.name}</CardTitle>
-                  <CardDescription>{r.description || '—'}</CardDescription>
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-foreground">{r.name}</CardTitle>
+                  <CardDescription className="dark:text-muted-foreground">{r.description || '—'}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center text-gray-800"><Phone className="w-3 h-3 mr-2 text-gray-400" /> {r.phone || '—'}</div>
-                    <div className="flex items-center text-gray-800"><MapPin className="w-3 h-3 mr-2 text-gray-400" /> {r.address || '—'}</div>
+                    <div className="flex items-center text-gray-800 dark:text-muted-foreground"><Phone className="w-3 h-3 mr-2 text-gray-400 dark:text-muted-foreground" /> {r.phone || '—'}</div>
+                    <div className="flex items-center text-gray-800 dark:text-muted-foreground"><MapPin className="w-3 h-3 mr-2 text-gray-400 dark:text-muted-foreground" /> {r.address || '—'}</div>
                   </div>
                   <div className="pt-4">
-                    <Button variant="outline" size="sm" onClick={() => handleSetDefault(r.id)}>
+                    <Button variant="outline" size="sm" onClick={() => handleSetDefault(r.id)} className="dark:border-border dark:text-foreground">
                       <Star className="w-4 h-4 mr-2" /> Set as default
                     </Button>
                   </div>

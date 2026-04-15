@@ -60,16 +60,16 @@ export default function RestaurantSetup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:bg-background dark:bg-none">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-background dark:via-background dark:to-muted">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-orange-100 sticky top-0 z-10">
+      <div className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-b border-orange-100 dark:border-border sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center py-6 space-y-4 md:space-y-0">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/dashboard')}
-              className="self-start md:mr-4 border-orange-200 text-orange-700 hover:bg-orange-50"
+              className="self-start md:mr-4 border-orange-200 dark:border-border text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
@@ -82,7 +82,7 @@ export default function RestaurantSetup() {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
                   Restaurant Setup
                 </h1>
-                <p className="text-gray-600">Create your restaurant profile</p>
+                <p className="text-gray-600 dark:text-muted-foreground">Create your restaurant profile</p>
               </div>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function RestaurantSetup() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <Card className="bg-white/80 backdrop-blur-sm border-orange-100 shadow-2xl">
+        <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border shadow-2xl">
           <CardHeader className="text-center pb-8">
             <div className="mx-auto mb-4 w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center">
               <Building className="w-8 h-8 text-white" />
@@ -98,7 +98,7 @@ export default function RestaurantSetup() {
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
               Set Up Your Restaurant
             </CardTitle>
-            <CardDescription className="text-gray-600 text-lg">
+            <CardDescription className="text-gray-600 dark:text-muted-foreground text-lg">
               Tell us about your restaurant to get started with AR menus
             </CardDescription>
           </CardHeader>
@@ -107,20 +107,20 @@ export default function RestaurantSetup() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Image Upload */}
               <div className="space-y-2">
-                <Label className="text-sm font-semibold text-gray-700">Restaurant Image (Optional)</Label>
+                <Label className="text-sm font-semibold text-gray-700 dark:text-foreground">Restaurant Image (Optional)</Label>
                 <div className="flex items-center space-x-3">
                   <label className="cursor-pointer">
                     <input ref={imageFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => setFormData({ ...formData, image_filename: e.target.files?.[0]?.name || '' })} />
-                    <div className="px-3 py-2 border rounded bg-white hover:bg-gray-50">Choose Image</div>
+                    <div className="px-3 py-2 border dark:border-border rounded bg-white dark:bg-muted hover:bg-gray-50 dark:hover:bg-muted/80 dark:text-foreground">Choose Image</div>
                   </label>
-                  <p className="text-xs text-gray-500">Add a Image for your Restaurant Identity</p>
+                  <p className="text-xs text-gray-500 dark:text-muted-foreground">Add a Image for your Restaurant Identity</p>
                   {formData.image_filename && (
-                    <span className="text-xs text-gray-600">{formData.image_filename}</span>
+                    <span className="text-xs text-gray-600 dark:text-muted-foreground">{formData.image_filename}</span>
                   )}
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
+                <Label htmlFor="name" className="text-sm font-semibold text-gray-700 dark:text-foreground">
                   Restaurant Name *
                 </Label>
                 <div className="relative">
@@ -133,13 +133,13 @@ export default function RestaurantSetup() {
                     value={formData.name}
                     onChange={handleInputChange}
                     placeholder="Enter restaurant name"
-                    className="pl-10 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
+                    className="pl-10 h-12 border-gray-200 dark:border-border focus:border-orange-500 focus:ring-orange-500 rounded-lg dark:bg-muted dark:text-foreground"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
+                <Label htmlFor="description" className="text-sm font-semibold text-gray-700 dark:text-foreground">
                   Description
                 </Label>
                 <div className="relative">
@@ -150,13 +150,13 @@ export default function RestaurantSetup() {
                     value={formData.description}
                     onChange={handleInputChange}
                     placeholder="Tell customers about your restaurant..."
-                    className="pl-10 min-h-[100px] border-gray-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg resize-none"
+                    className="pl-10 min-h-[100px] border-gray-200 dark:border-border focus:border-orange-500 focus:ring-orange-500 rounded-lg resize-none dark:bg-muted dark:text-foreground"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address" className="text-sm font-semibold text-gray-700">
+                <Label htmlFor="address" className="text-sm font-semibold text-gray-700 dark:text-foreground">
                   Address
                 </Label>
                 <div className="relative">
@@ -168,13 +168,13 @@ export default function RestaurantSetup() {
                     value={formData.address}
                     onChange={handleInputChange}
                     placeholder="Enter restaurant address"
-                    className="pl-10 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
+                    className="pl-10 h-12 border-gray-200 dark:border-border focus:border-orange-500 focus:ring-orange-500 rounded-lg dark:bg-muted dark:text-foreground"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
+                <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-foreground">
                   Phone Number
                 </Label>
                 <div className="relative">
@@ -189,7 +189,7 @@ export default function RestaurantSetup() {
                       setFormData({ ...formData, phone: digitsOnly });
                     }}
                     placeholder="Enter phone number"
-                    className="pl-10 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
+                    className="pl-10 h-12 border-gray-200 dark:border-border focus:border-orange-500 focus:ring-orange-500 rounded-lg dark:bg-muted dark:text-foreground"
                   />
                 </div>
               </div>
@@ -215,7 +215,7 @@ export default function RestaurantSetup() {
               </div>
 
               <div className="text-center pt-4">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-muted-foreground">
                   After creating your restaurant, you'll be able to add menu items and generate QR codes
                 </p>
               </div>

@@ -33,13 +33,13 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-      <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-background dark:via-background dark:to-muted transition-colors duration-500">
+      <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/80 dark:bg-zinc-800/70 backdrop-blur-sm dark:border dark:border-border/50">
         <CardHeader className="text-center pb-6">
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 dark:from-orange-400 dark:to-amber-400 bg-clip-text text-transparent">
             Forgot Password
           </CardTitle>
-          <CardDescription className="text-gray-600 text-lg">
+          <CardDescription className="text-gray-600 dark:text-muted-foreground text-lg">
             {submitted ? "Check your inbox for the reset link." : "Enter your email to receive a password reset link."}
           </CardDescription>
         </CardHeader>
@@ -47,9 +47,9 @@ export default function ForgotPassword() {
         <CardContent>
           {submitted ? (
             <div className="text-center">
-              <p className="text-gray-700 mb-6">Didn't receive an email? Check your spam folder or try again after some time.</p>
+              <p className="text-gray-700 dark:text-muted-foreground mb-6">Didn't receive an email? Check your spam folder or try again after some time.</p>
               <Link to="/login">
-                <Button className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 text-white">
+                <Button className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/20">
                   <ArrowLeft className="mr-2 w-4 h-4" />
                   Back to Login
                 </Button>
@@ -58,11 +58,11 @@ export default function ForgotPassword() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-foreground">
                   Email Address
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-muted-foreground/60 w-4 h-4" />
                   <Input
                     id="email"
                     name="email"
@@ -71,7 +71,7 @@ export default function ForgotPassword() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="pl-10 h-12"
+                    className="pl-10 h-12 bg-white/50 dark:bg-background/50 border-gray-200 dark:border-border focus:ring-orange-500 transition-all"
                   />
                 </div>
               </div>
@@ -79,7 +79,7 @@ export default function ForgotPassword() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 text-white"
+                className="w-full h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/20"
               >
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </Button>

@@ -91,14 +91,14 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-background dark:via-background dark:to-muted">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-amber-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-200 dark:bg-orange-900/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-amber-200 dark:bg-amber-900/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
       </div>
 
-      <Card className="w-full max-w-md relative z-20 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+      <Card className="w-full max-w-md relative z-20 shadow-2xl border-0 bg-white/80 dark:bg-zinc-800/70 backdrop-blur-sm">
         <CardHeader className="text-center pb-6">
           <div>
             <img 
@@ -110,7 +110,7 @@ export default function Register() {
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
             Join DishLook
           </CardTitle>
-          <CardDescription className="text-gray-600 text-lg">
+          <CardDescription className="text-gray-600 dark:text-muted-foreground text-lg">
             Create your restaurant account
           </CardDescription>
         </CardHeader>
@@ -118,7 +118,7 @@ export default function Register() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="name" className="text-sm font-semibold text-gray-700 dark:text-foreground">
                 Full Name
               </Label>
               <div className="relative">
@@ -131,13 +131,13 @@ export default function Register() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Enter your full name"
-                  className="pl-10 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
+                  className="pl-10 h-12 border-gray-200 dark:border-border focus:border-orange-500 focus:ring-orange-500 rounded-lg dark:bg-muted dark:text-foreground"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-foreground">
                 Email Address
               </Label>
               <div className="relative">
@@ -150,7 +150,7 @@ export default function Register() {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="Enter your email"
-                  className="pl-10 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
+                  className="pl-10 h-12 border-gray-200 dark:border-border focus:border-orange-500 focus:ring-orange-500 rounded-lg dark:bg-muted dark:text-foreground"
                 />
               </div>
             </div>
@@ -158,7 +158,7 @@ export default function Register() {
             {/* Role selection removed - all users are restaurant owners by default */}
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-foreground">
                 Password
               </Label>
               <div className="relative">
@@ -171,12 +171,12 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleInputChange}
                   placeholder="Create a password"
-                  className="pl-10 pr-12 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
+                  className="pl-10 pr-12 h-12 border-gray-200 dark:border-border focus:border-orange-500 focus:ring-orange-500 rounded-lg dark:bg-muted dark:text-foreground"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -188,7 +188,7 @@ export default function Register() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700 dark:text-foreground">
                 Confirm Password
               </Label>
               <div className="relative">
@@ -201,12 +201,12 @@ export default function Register() {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   placeholder="Confirm your password"
-                  className="pl-10 pr-12 h-12 border-gray-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
+                  className="pl-10 pr-12 h-12 border-gray-200 dark:border-border focus:border-orange-500 focus:ring-orange-500 rounded-lg dark:bg-muted dark:text-foreground"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -236,11 +236,11 @@ export default function Register() {
             </Button>
 
             <div className="text-center">
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-muted-foreground">
                 Already have an account?{' '}
                 <Link 
                   to="/login" 
-                  className="text-orange-600 hover:text-orange-700 font-semibold hover:underline transition-colors"
+                  className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-semibold hover:underline transition-colors"
                 >
                   Sign in here
                 </Link>

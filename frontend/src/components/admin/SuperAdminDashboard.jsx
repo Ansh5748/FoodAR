@@ -144,19 +144,19 @@ export default function SuperAdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-background dark:via-background dark:to-muted flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading Super Admin Dashboard...</p>
+          <p className="text-gray-600 dark:text-muted-foreground">Loading Super Admin Dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-background dark:via-background dark:to-muted">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-orange-100 sticky top-0 z-10">
+      <div className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-b border-orange-100 dark:border-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between py-6 space-y-4 md:space-y-0">
             {/* Row 1: Back Button */}
@@ -164,7 +164,7 @@ export default function SuperAdminDashboard() {
               variant="outline"
               size="sm"
               onClick={() => navigate('/dashboard')}
-              className="self-start border-orange-200 text-orange-700 hover:bg-orange-50"
+              className="self-start border-orange-200 dark:border-border text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
@@ -179,7 +179,7 @@ export default function SuperAdminDashboard() {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-purple-600 bg-clip-text text-transparent">
                   Super Admin Dashboard
                 </h1>
-                <p className="text-gray-600">Complete system oversight and management</p>
+                <p className="text-gray-600 dark:text-muted-foreground">Complete system oversight and management</p>
               </div>
             </div>
             
@@ -195,52 +195,52 @@ export default function SuperAdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Key Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-white/80 backdrop-blur-sm border-orange-100">
+          <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Restaurants</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.restaurants?.total || 0}</p>
-                  <p className="text-xs text-green-600">{stats?.restaurants?.active || 0} active</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-muted-foreground">Total Restaurants</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{stats?.restaurants?.total || 0}</p>
+                  <p className="text-xs text-green-600 dark:text-green-400">{stats?.restaurants?.active || 0} active</p>
                 </div>
                 <Building className="w-8 h-8 text-orange-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-orange-100">
+          <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Users</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.users?.total || 0}</p>
-                  <p className="text-xs text-blue-600">{stats?.users?.admins || 0} admins</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-muted-foreground">Total Users</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{stats?.users?.total || 0}</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">{stats?.users?.admins || 0} admins</p>
                 </div>
                 <Users className="w-8 h-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-orange-100">
+          <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">QR Scans</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.total_scans || 0}</p>
-                  <p className="text-xs text-green-600">{stats?.qr_codes || 0} codes</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-muted-foreground">QR Scans</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{stats?.total_scans || 0}</p>
+                  <p className="text-xs text-green-600 dark:text-green-400">{stats?.qr_codes || 0} codes</p>
                 </div>
                 <QrCode className="w-8 h-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-orange-100">
+          <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Food Items</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.food_items || 0}</p>
-                  <p className="text-xs text-purple-600">{stats?.library_items || 0} in library</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-muted-foreground">Food Items</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{stats?.food_items || 0}</p>
+                  <p className="text-xs text-purple-600 dark:text-purple-400">{stats?.library_items || 0} in library</p>
                 </div>
                 <Database className="w-8 h-8 text-purple-500" />
               </div>
@@ -249,59 +249,62 @@ export default function SuperAdminDashboard() {
         </div>
 
         {/* Admin Management */}
-        <Card className="bg-white/80 backdrop-blur-sm border-orange-100 mb-8">
+        <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center">
+                <CardTitle className="flex items-center dark:text-foreground">
                   <Shield className="w-5 h-5 mr-2" />
                   Admin Management
                 </CardTitle>
-                <CardDescription>Manage admin users and their permissions</CardDescription>
+                <CardDescription className="dark:text-muted-foreground">Manage admin users and their permissions</CardDescription>
               </div>
               <Dialog open={showAddAdmin} onOpenChange={setShowAddAdmin}>
                 <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+                  <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Admin
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl bg-white dark:bg-card border dark:border-border">
                   <DialogHeader>
-                    <DialogTitle>Add New Admin</DialogTitle>
+                    <DialogTitle className="dark:text-foreground">Add New Admin</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="admin-email">Email</Label>
+                      <Label htmlFor="admin-email" className="dark:text-foreground">Email</Label>
                       <Input
                         id="admin-email"
                         type="email"
                         value={newAdmin.email}
                         onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
                         placeholder="admin@example.com"
+                        className="dark:bg-muted dark:border-border dark:text-foreground"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="admin-name">Name</Label>
+                      <Label htmlFor="admin-name" className="dark:text-foreground">Name</Label>
                       <Input
                         id="admin-name"
                         value={newAdmin.name}
                         onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })}
                         placeholder="Admin Name"
+                        className="dark:bg-muted dark:border-border dark:text-foreground"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="admin-password">Password</Label>
+                      <Label htmlFor="admin-password" className="dark:text-foreground">Password</Label>
                       <Input
                         id="admin-password"
                         type="password"
                         value={newAdmin.password}
                         onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
                         placeholder="Set admin password"
+                        className="dark:bg-muted dark:border-border dark:text-foreground"
                       />
                     </div>
                     <div>
-                      <Label>Permissions</Label>
+                      <Label className="dark:text-foreground">Permissions</Label>
                       <div className="grid grid-cols-2 gap-2 mt-2 max-h-60 overflow-y-auto">
                         {permissions.map((permission) => (
                           <div key={permission} className="flex items-center space-x-2">
@@ -309,8 +312,9 @@ export default function SuperAdminDashboard() {
                               id={permission}
                               checked={newAdmin.permissions.includes(permission)}
                               onCheckedChange={() => togglePermission(permission)}
+                              className="dark:border-border"
                             />
-                            <Label htmlFor={permission} className="text-sm">
+                            <Label htmlFor={permission} className="text-sm dark:text-muted-foreground">
                               {permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Label>
                           </div>
@@ -318,10 +322,10 @@ export default function SuperAdminDashboard() {
                       </div>
                     </div>
                     <div className="flex justify-end space-x-2">
-                      <Button variant="outline" onClick={() => setShowAddAdmin(false)}>
+                      <Button variant="outline" onClick={() => setShowAddAdmin(false)} className="dark:border-border dark:text-foreground">
                         Cancel
                       </Button>
-                      <Button onClick={handleAddAdmin}>
+                      <Button onClick={handleAddAdmin} className="bg-orange-500 hover:bg-orange-600 text-white">
                         Add Admin
                       </Button>
                     </div>
@@ -333,25 +337,25 @@ export default function SuperAdminDashboard() {
           <CardContent>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Password</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Permissions</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableRow className="dark:border-border">
+                  <TableHead className="dark:text-muted-foreground">Name</TableHead>
+                  <TableHead className="dark:text-muted-foreground">Email</TableHead>
+                  <TableHead className="dark:text-muted-foreground">Password</TableHead>
+                  <TableHead className="dark:text-muted-foreground">Role</TableHead>
+                  <TableHead className="dark:text-muted-foreground">Permissions</TableHead>
+                  <TableHead className="dark:text-muted-foreground">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {admins.map((admin) => (
-                  <TableRow key={admin.id}>
-                    <TableCell className="font-medium">{admin.name}</TableCell>
-                    <TableCell>{admin.email}</TableCell>
+                  <TableRow key={admin.id} className="dark:border-border">
+                    <TableCell className="font-medium dark:text-foreground">{admin.name}</TableCell>
+                    <TableCell className="dark:text-muted-foreground">{admin.email}</TableCell>
                     <TableCell>
                       {admin.role === 'super_admin' ? (
-                        <span className="text-gray-400 text-sm">Hidden</span>
+                        <span className="text-gray-400 dark:text-muted-foreground text-sm">Hidden</span>
                       ) : (
-                        <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                        <span className="text-sm font-mono bg-gray-100 dark:bg-muted px-2 py-1 rounded dark:text-foreground">
                           {admin.password || 'No password set'}
                         </span>
                       )}
@@ -364,12 +368,12 @@ export default function SuperAdminDashboard() {
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {admin.permissions.slice(0, 3).map((permission) => (
-                          <Badge key={permission} variant="secondary" className="text-xs">
+                          <Badge key={permission} variant="secondary" className="text-xs dark:bg-muted dark:text-muted-foreground">
                             {permission.replace(/_/g, ' ').split(' ')[0]}
                           </Badge>
                         ))}
                         {admin.permissions.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs dark:border-border dark:text-muted-foreground">
                             +{admin.permissions.length - 3} more
                           </Badge>
                         )}
@@ -387,17 +391,18 @@ export default function SuperAdminDashboard() {
                                   ...admin,
                                   password: admin.password || ''
                                 })}
+                                className="dark:border-border dark:text-muted-foreground dark:hover:text-foreground"
                               >
                                 <Settings className="w-4 h-4" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-md">
+                            <DialogContent className="max-w-md bg-white dark:bg-card border dark:border-border">
                               <DialogHeader>
-                                <DialogTitle>Edit Admin Details</DialogTitle>
+                                <DialogTitle className="dark:text-foreground">Edit Admin Details</DialogTitle>
                               </DialogHeader>
                               <div className="space-y-4">
                                 <div>
-                                  <Label htmlFor="edit-name">Name</Label>
+                                  <Label htmlFor="edit-name" className="dark:text-foreground">Name</Label>
                                   <Input
                                     id="edit-name"
                                     value={editingAdminDetails?.name || ''}
@@ -405,10 +410,11 @@ export default function SuperAdminDashboard() {
                                       ...editingAdminDetails,
                                       name: e.target.value
                                     })}
+                                    className="dark:bg-muted dark:border-border dark:text-foreground"
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor="edit-email">Email</Label>
+                                  <Label htmlFor="edit-email" className="dark:text-foreground">Email</Label>
                                   <Input
                                     id="edit-email"
                                     type="email"
@@ -417,10 +423,11 @@ export default function SuperAdminDashboard() {
                                       ...editingAdminDetails,
                                       email: e.target.value
                                     })}
+                                    className="dark:bg-muted dark:border-border dark:text-foreground"
                                   />
                                 </div>
                                 <div>
-                                  <Label htmlFor="edit-password">Password</Label>
+                                  <Label htmlFor="edit-password" className="dark:text-foreground">Password</Label>
                                   <Input
                                     id="edit-password"
                                     type="password"
@@ -430,10 +437,11 @@ export default function SuperAdminDashboard() {
                                       password: e.target.value
                                     })}
                                     placeholder="Enter new password"
+                                    className="dark:bg-muted dark:border-border dark:text-foreground"
                                   />
                                 </div>
                                 <div className="flex justify-end space-x-2">
-                                  <Button variant="outline" onClick={() => setEditingAdminDetails(null)}>
+                                  <Button variant="outline" onClick={() => setEditingAdminDetails(null)} className="dark:border-border dark:text-foreground">
                                     Cancel
                                   </Button>
                                   <Button onClick={() => {
@@ -442,7 +450,7 @@ export default function SuperAdminDashboard() {
                                       email: editingAdminDetails.email,
                                       password: editingAdminDetails.password
                                     });
-                                  }}>
+                                  }} className="bg-orange-500 hover:bg-orange-600 text-white">
                                     Update Details
                                   </Button>
                                 </div>
@@ -456,17 +464,18 @@ export default function SuperAdminDashboard() {
                               variant="outline"
                               size="sm"
                               onClick={() => setEditingAdmin(admin)}
+                              className="dark:border-border dark:text-muted-foreground dark:hover:text-foreground"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
+                          <DialogContent className="max-w-2xl bg-white dark:bg-card border dark:border-border">
                             <DialogHeader>
-                              <DialogTitle>Edit Admin Permissions</DialogTitle>
+                              <DialogTitle className="dark:text-foreground">Edit Admin Permissions</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
                               <div>
-                                <Label>Permissions for {admin.name}</Label>
+                                <Label className="dark:text-foreground">Permissions for {admin.name}</Label>
                                 <div className="grid grid-cols-2 gap-2 mt-2 max-h-60 overflow-y-auto">
                                   {permissions.map((permission) => (
                                     <div key={permission} className="flex items-center space-x-2">
@@ -474,8 +483,9 @@ export default function SuperAdminDashboard() {
                                         id={`edit-${permission}`}
                                         checked={editingAdmin?.permissions.includes(permission) || false}
                                         onCheckedChange={() => togglePermission(permission)}
+                                        className="dark:border-border"
                                       />
-                                      <Label htmlFor={`edit-${permission}`} className="text-sm">
+                                      <Label htmlFor={`edit-${permission}`} className="text-sm dark:text-muted-foreground">
                                         {permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                       </Label>
                                     </div>
@@ -483,12 +493,12 @@ export default function SuperAdminDashboard() {
                                 </div>
                               </div>
                               <div className="flex justify-end space-x-2">
-                                <Button variant="outline" onClick={() => setEditingAdmin(null)}>
+                                <Button variant="outline" onClick={() => setEditingAdmin(null)} className="dark:border-border dark:text-foreground">
                                   Cancel
                                 </Button>
                                 <Button onClick={() => {
                                   handleUpdatePermissions(admin.id, editingAdmin.permissions);
-                                }}>
+                                }} className="bg-orange-500 hover:bg-orange-600 text-white">
                                   Update Permissions
                                 </Button>
                               </div>
@@ -500,7 +510,7 @@ export default function SuperAdminDashboard() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleRemoveAdmin(admin.id)}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700 dark:border-red-900/50 dark:hover:bg-red-950/20"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -516,9 +526,9 @@ export default function SuperAdminDashboard() {
 
         {/* System Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white/80 backdrop-blur-sm border-orange-100">
+          <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border">
             <CardHeader>
-              <CardTitle className="flex items-center">
+              <CardTitle className="flex items-center dark:text-foreground">
                 <Activity className="w-5 h-5 mr-2" />
                 Recent Activity
               </CardTitle>
@@ -526,26 +536,26 @@ export default function SuperAdminDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {stats?.recent_analytics?.slice(0, 5).map((event, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-muted/50 rounded-lg">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{event.event_type}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium dark:text-foreground">{event.event_type}</p>
+                      <p className="text-xs text-gray-500 dark:text-muted-foreground">
                         {new Date(event.timestamp).toLocaleString()}
                       </p>
                     </div>
                   </div>
                 ))}
                 {(!stats?.recent_analytics || stats.recent_analytics.length === 0) && (
-                  <p className="text-gray-500 text-center py-4">No recent activity</p>
+                  <p className="text-gray-500 dark:text-muted-foreground text-center py-4">No recent activity</p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-orange-100">
+          <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border">
             <CardHeader>
-              <CardTitle className="flex items-center">
+              <CardTitle className="flex items-center dark:text-foreground">
                 <BarChart3 className="w-5 h-5 mr-2" />
                 System Health
               </CardTitle>
@@ -553,29 +563,29 @@ export default function SuperAdminDashboard() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Database Status</span>
-                  <Badge variant="default" className="bg-green-100 text-green-800">
+                  <span className="text-sm dark:text-muted-foreground">Database Status</span>
+                  <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Healthy
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">API Status</span>
-                  <Badge variant="default" className="bg-green-100 text-green-800">
+                  <span className="text-sm dark:text-muted-foreground">API Status</span>
+                  <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Online
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Storage Usage</span>
-                  <Badge variant="default" className="bg-blue-100 text-blue-800">
+                  <span className="text-sm dark:text-muted-foreground">Storage Usage</span>
+                  <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                     <Database className="w-3 h-3 mr-1" />
                     Normal
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Active Sessions</span>
-                  <Badge variant="default" className="bg-orange-100 text-orange-800">
+                  <span className="text-sm dark:text-muted-foreground">Active Sessions</span>
+                  <Badge variant="default" className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
                     <Users className="w-3 h-3 mr-1" />
                     {stats?.users?.total || 0}
                   </Badge>

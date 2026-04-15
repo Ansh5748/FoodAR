@@ -10,6 +10,7 @@ import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
 import Dashboard from './components/dashboard/Dashboard';
 import RestaurantSetup from './components/restaurant/RestaurantSetup';
+import RestaurantMenu from './components/restaurant/RestaurantMenu';
 import FoodItemManager from './components/food/FoodItemManager';
 import ARViewer from './components/ar/ARViewer';
 import QRGenerator from './components/qr/QRGenerator';
@@ -21,6 +22,7 @@ import CustomerFeedback from './components/feedback/CustomerFeedback';
 import Settings from './components/settings/Settings';
 import Profile from './components/settings/Profile';
 import { Toaster } from './components/ui/sonner';
+import BrandingBadge from './components/ui/BrandingBadge';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -41,6 +43,14 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('access_token'));
+
+  // Theme management
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, []);
 
   // Configure axios defaults
   useEffect(() => {
@@ -132,6 +142,10 @@ function App() {
   };
 
   if (loading) {
+    // Check if we are on the AR route to avoid showing the global loader
+    if (window.location.pathname.startsWith('/ar/')) {
+      return null; // Let ARViewer handle its own loading state
+    }
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
         <div className="text-center">
@@ -157,6 +171,7 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/ar/:foodItemId" element={<ARViewer />} />
+            <Route path="/menu/:restaurantId" element={<RestaurantMenu />} />
             
             {/* Protected routes */}
             <Route path="/dashboard" element={
@@ -195,13 +210,14 @@ function App() {
             <Route path="/profile" element={
               user ? <Profile /> : <Navigate to="/login" />
             } />
-            
-            {/* Default redirect */}
+
+            {/* Default route */}
             <Route path="/" element={
-              <Navigate to={user ? getDashboardRoute(user) : "/login"} />
+              user ? <Navigate to={getDashboardRoute(user)} /> : <Navigate to="/login" />
             } />
           </Routes>
-          <Toaster />
+          <BrandingBadge />
+          <Toaster position="top-center" />
         </div>
       </Router>
     </AuthContext.Provider>

@@ -182,10 +182,10 @@ export default function FoodLibrary() {
   };
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-background dark:via-background dark:to-muted flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading food library...</p>
+          <p className="text-gray-600 dark:text-muted-foreground">Loading food library...</p>
         </div>
       </div>
     );
@@ -197,19 +197,19 @@ export default function FoodLibrary() {
   const pageItems = filteredItems.slice(start, end);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-background dark:via-background dark:to-muted">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-orange-100 sticky top-0 z-10">
+      <div className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-b border-orange-100 dark:border-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center py-4 sm:py-6 gap-3">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/dashboard')}
-              className="self-start mr-4 border-orange-200 text-orange-700 hover:bg-orange-50"
+              className="self-start mr-4 border-orange-200 dark:border-border text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Dashboard
+              Back to Dashboard
             </Button>
             <div className="flex items-center">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center sm:mr-4 mr-2">
@@ -219,7 +219,7 @@ export default function FoodLibrary() {
                 <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Food Library
                 </h1>
-                <p className="text-gray-600">Explore 2D, 3D and 360° previews for your menu</p>
+                <p className="text-gray-600 dark:text-muted-foreground">Explore 2D, 3D and 360° previews for your menu</p>
               </div>
             </div>
           </div>
@@ -228,7 +228,7 @@ export default function FoodLibrary() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters */}
-        <Card className="bg-white/80 backdrop-blur-sm border-orange-100 mb-8">
+        <Card className="bg-white/80 dark:bg-card/80 backdrop-blur-sm border-orange-100 dark:border-border mb-8">
           <CardContent className="p-6">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Search */}
