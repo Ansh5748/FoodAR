@@ -97,8 +97,8 @@ export default function ARViewer() {
       };
 
       const onDown = (x, y) => {
-        if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', {enabled: false});
         if (!this.data.enabled) return;
+        if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', {enabled: false});
         this.dragging = true;
         this.startX = x;
         this.startY = y;
@@ -128,8 +128,8 @@ export default function ARViewer() {
 
 
     const onUp = () => {
-      if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', {enabled: true});
       if (!this.data.enabled) return;
+      if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', {enabled: true});
       this.dragging = false;
     };
 
@@ -444,8 +444,8 @@ useEffect(() => {
     // Mobile screen is usually around 350-450px wide. 
     // Desktop screens are much wider.
     
-    const yPos = 1.6;  // Eye level center height
-    const zPos = -3.0; // Slightly further back for better framing
+    const yPos = 0;  // Centered relative to camera
+    const zPos = 0;  // No additional offset from content-container
     
     // 1. Mobile Scaling
     if (isMobile) {
@@ -709,12 +709,12 @@ useEffect(() => {
           <a-light type="directional" position="1 1 1" intensity="0.8"></a-light>
           <a-light type="directional" position="-1 1 1" intensity="0.5"></a-light>
 
-          {/* The content is placed in front of the camera's initial position */}
-          <a-entity id="content-container" position="0 0 0" rotation="0 0 0">
-            {getPreviewContent()}
+          <a-entity camera look-controls="enabled: true; touchEnabled: false" wasd-controls="enabled: false">
+            {/* The content is placed in front of the camera to stay fixed on screen */}
+            <a-entity id="content-container" position="0 0 -3.0" rotation="0 0 0">
+              {getPreviewContent()}
+            </a-entity>
           </a-entity>
-
-          <a-entity camera look-controls="enabled: true" wasd-controls="enabled: false"></a-entity>
         </a-scene>
       )}
 
