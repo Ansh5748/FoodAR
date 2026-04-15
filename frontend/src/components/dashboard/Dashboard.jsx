@@ -424,7 +424,7 @@ export default function Dashboard() {
                         <QrCode className="w-3 h-3 mr-1" />
                         Master QR
                       </Button>
-                      <Link to={`/menu/${restaurant.id}`} target="_blank" className="w-full">
+                      <Link to={`${window.location.origin}/menu/${restaurant.id}`} target="_blank" className="w-full">
                         <Button variant="outline" size="sm" className="w-full text-xs border-orange-200 dark:border-orange-900/50 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20">
                           <Eye className="w-3 h-3 mr-1" />
                           View Menu
@@ -491,7 +491,7 @@ export default function Dashboard() {
                     variant="outline" 
                     className="flex-1 border-orange-200 dark:border-orange-900/50 text-orange-700 dark:text-orange-400"
                     onClick={() => {
-                      window.open(`/menu/${selectedRestaurant.id}`, '_blank');
+                      window.open(`${window.location.origin}/menu/${selectedRestaurant.id}`, '_blank');
                     }}
                   >
                     Open Menu
