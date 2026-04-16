@@ -97,8 +97,11 @@ export default function ARViewer() {
       };
 
       const onDown = (x, y) => {
+        // ALWAYS disable camera controls on interaction to prevent background movement
+        if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', 'enabled', false);
+        
+        // Only track rotation for enabled components (3D models)
         if (!this.data.enabled) return;
-        if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', {enabled: false});
         this.dragging = true;
         this.startX = x;
         this.startY = y;
@@ -128,8 +131,9 @@ export default function ARViewer() {
 
 
     const onUp = () => {
+      // ALWAYS re-enable camera controls
+      if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', 'enabled', true);
       if (!this.data.enabled) return;
-      if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', {enabled: true});
       this.dragging = false;
     };
 
@@ -444,8 +448,8 @@ useEffect(() => {
     // Mobile screen is usually around 350-450px wide. 
     // Desktop screens are much wider.
     
-    const yPos = 0;  // Centered relative to camera
-    const zPos = 0;  // No additional offset from content-container
+    const yPos = 1.6;   
+    const zPos = 0.3;  
     
     // 1. Mobile Scaling
     if (isMobile) {
