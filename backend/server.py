@@ -25,6 +25,16 @@ from bson import ObjectId
 from contextlib import asynccontextmanager
 from starlette.concurrency import run_in_threadpool
 
+import dns.resolver
+
+# Fix Windows DNS SRV lookup timeout issue for MongoDB Atlas (mongodb+srv://)
+# Local router DNS (192.168.1.1) often times out on SRV record queries.
+try:
+    dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
+    dns.resolver.default_resolver.nameservers = ['8.8.8.8', '8.8.4.4', '1.1.1.1']
+except Exception:
+    pass
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 

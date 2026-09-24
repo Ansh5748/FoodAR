@@ -97,7 +97,7 @@ export default function ARViewer() {
       };
 
       const onDown = (x, y) => {
-        // ALWAYS disable camera controls on interaction to prevent background movement
+        // Ensure camera look-controls remain disabled to prevent background movement
         if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', 'enabled', false);
         
         // Only track rotation for enabled components (3D models)
@@ -127,56 +127,58 @@ export default function ARViewer() {
 
         obj.rotation.x = nextX;
         obj.rotation.y += deltaX * 0.01;
-};
-
-
-    const onUp = () => {
-      // ALWAYS re-enable camera controls
-      if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', 'enabled', true);
-      if (!this.data.enabled) return;
-      this.dragging = false;
-    };
-
-    const attachListeners = (canvas) => {
-      // --- Mouse Listeners ---
-      const handleMouseDown = (e) => {
-        e.preventDefault();
-        onDown(e.clientX, e.clientY);
-      };
-      const handleMouseMove = (e) => {
-        e.preventDefault();
-        onMove(e.clientX, e.clientY);
-      };
-      const handleMouseUp = (e) => {
-        e.preventDefault();
-        onUp();
       };
 
-      canvas.addEventListener('mousedown', handleMouseDown);
-      canvas.addEventListener('mousemove', handleMouseMove);
-      canvas.addEventListener('mouseup', handleMouseUp);
-      canvas.addEventListener('mouseleave', handleMouseUp); // Use mouseup handler for leave
-
-      // --- Touch Listeners ---
-      const handleTouchStart = (e) => {
-        // Prevent default touch actions like scrolling or zooming
-        e.preventDefault();
-        onDown(e.touches[0].clientX, e.touches[0].clientY);
-      };
-      const handleTouchMove = (e) => {
-        e.preventDefault();
-        onMove(e.touches[0].clientX, e.touches[0].clientY);
-      };
-      const handleTouchEnd = (e) => {
-        e.preventDefault();
-        onUp();
+      const onUp = () => {
+        // Keep camera look-controls disabled so view never shifts on release
+        if (sceneEl.camera) sceneEl.camera.el.setAttribute('look-controls', 'enabled', false);
+        if (!this.data.enabled) return;
+        this.dragging = false;
       };
 
-      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-      canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-    };
+      const attachListeners = (canvas) => {
+        // --- Mouse Listeners ---
+        const handleMouseDown = (e) => {
+          e.preventDefault();
+          onDown(e.clientX, e.clientY);
+        };
+        const handleMouseMove = (e) => {
+          e.preventDefault();
+          onMove(e.clientX, e.clientY);
+        };
+        const handleMouseUp = (e) => {
+          e.preventDefault();
+          onUp();
+        };
+
+        canvas.addEventListener('mousedown', handleMouseDown);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseup', handleMouseUp);
+        canvas.addEventListener('mouseleave', handleMouseUp);
+
+        // --- Touch Listeners ---
+        const handleTouchStart = (e) => {
+          e.preventDefault();
+          if (e.touches && e.touches.length > 0) {
+            onDown(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        };
+        const handleTouchMove = (e) => {
+          e.preventDefault();
+          if (e.touches && e.touches.length > 0) {
+            onMove(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        };
+        const handleTouchEnd = (e) => {
+          e.preventDefault();
+          onUp();
+        };
+
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+      };
 
       // Ensure the A-Frame canvas exists before attaching
       if (el.sceneEl.canvas) {
@@ -660,6 +662,7 @@ useEffect(() => {
           position: absolute;
           top: 0;
           left: 0;
+          touch-action: none !important;
         }
         
         video {
@@ -713,7 +716,7 @@ useEffect(() => {
           <a-light type="directional" position="1 1 1" intensity="0.8"></a-light>
           <a-light type="directional" position="-1 1 1" intensity="0.5"></a-light>
 
-          <a-entity camera look-controls="enabled: true; touchEnabled: false" wasd-controls="enabled: false">
+          <a-entity camera look-controls="enabled: false" wasd-controls="enabled: false">
             {/* The content is placed in front of the camera to stay fixed on screen */}
             <a-entity id="content-container" position="0 0 -3.0" rotation="0 0 0">
               {getPreviewContent()}
