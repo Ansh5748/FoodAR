@@ -8,6 +8,7 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../ui
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { toast } from 'sonner';
+import { useConfirm } from '../ui/ConfirmDialog';
 import logo from "../../DishLook(1).png";
 import { 
   Building, 
@@ -37,6 +38,7 @@ export default function Dashboard() {
   const [showQrDialog, setShowQrDialog] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const { user, logout } = useAuth();
+  const { confirmDialog, ConfirmDialogUI } = useConfirm();
 
   useEffect(() => {
     fetchRestaurants();
@@ -94,6 +96,13 @@ export default function Dashboard() {
   };
 
   const handleDeleteRestaurant = async (restaurantId) => {
+    const confirmed = await confirmDialog({
+      title: 'Delete Restaurant',
+      message: 'Are you sure you want to permanently delete this restaurant and all its data? This cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`${API}/restaurants/${restaurantId}`);
       toast.success('Restaurant deleted');
@@ -513,6 +522,7 @@ export default function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
+      <ConfirmDialogUI />
     </div>
   );
 }

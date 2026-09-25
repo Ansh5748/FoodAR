@@ -217,7 +217,7 @@ function App() {
             } />
           </Routes>
           <BrandingBadge />
-          <Toaster position="top-center" />
+          <Toaster position="top-right" />
         </div>
       </Router>
     </AuthContext.Provider>

@@ -11,6 +11,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { toast } from 'sonner';
+import { useConfirm } from '../ui/ConfirmDialog';
 import { 
   ArrowLeft,
   Users,
@@ -39,6 +40,7 @@ const API = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
+  const { confirmDialog, ConfirmDialogUI } = useConfirm();
   const [stats, setStats] = useState(null);
   const [admins, setAdmins] = useState([]);
   const [permissions, setPermissions] = useState([]);
@@ -104,7 +106,13 @@ export default function SuperAdminDashboard() {
   };
 
   const handleRemoveAdmin = async (userId) => {
-    if (window.confirm('Are you sure you want to remove admin privileges?')) {
+    const confirmed = await confirmDialog({
+      title: 'Remove Admin Privileges',
+      message: 'Are you sure you want to remove admin privileges from this user? This action cannot be undone.',
+      confirmLabel: 'Remove',
+      variant: 'destructive',
+    });
+    if (confirmed) {
       try {
         await axios.delete(`${API}/admin/members/${userId}`);
         toast.success('Admin privileges removed successfully');
@@ -595,6 +603,7 @@ export default function SuperAdminDashboard() {
           </Card>
         </div>
       </div>
+      <ConfirmDialogUI />
     </div>
   );
 }

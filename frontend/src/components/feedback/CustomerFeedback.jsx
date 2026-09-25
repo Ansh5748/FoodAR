@@ -11,6 +11,7 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../ui
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../ui/dialog';
 import { toast } from 'sonner';
+import { useConfirm } from '../ui/ConfirmDialog';
 import { 
   ArrowLeft, 
   MessageSquare, 
@@ -63,6 +64,7 @@ export default function CustomerFeedback({
   const { restaurantId: urlRestaurantId } = useParams();
   const restaurantId = propRestaurantId || urlRestaurantId;
   const { user } = useAuth();
+  const { confirmDialog, ConfirmDialogUI } = useConfirm();
   const [restaurant, setRestaurant] = useState(null);
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -343,7 +345,13 @@ export default function CustomerFeedback({
   };
 
   const handleDelete = async (feedbackId) => {
-    if (window.confirm('Are you sure you want to delete this feedback?')) {
+    const confirmed = await confirmDialog({
+      title: 'Delete Feedback',
+      message: 'Are you sure you want to delete this feedback? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (confirmed) {
       try {
         await axios.delete(`${API}/feedback/${feedbackId}`);
         toast.success('Feedback deleted successfully!');
@@ -1039,6 +1047,7 @@ export default function CustomerFeedback({
           </>
         )}
       </div>
+      <ConfirmDialogUI />
     </div>
   );
 }

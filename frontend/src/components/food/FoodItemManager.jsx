@@ -11,6 +11,7 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../ui
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../ui/dialog';
 import { toast } from 'sonner';
+import { useConfirm } from '../ui/ConfirmDialog';
 import { cn } from '../../lib/utils';
 import { 
   Plus, 
@@ -55,6 +56,7 @@ export default function FoodItemManager() {
   const { restaurantId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { confirmDialog, ConfirmDialogUI } = useConfirm();
   const [restaurant, setRestaurant] = useState(null);
   const [foodItems, setFoodItems] = useState([]);
   const [foodLibraryItems, setFoodLibraryItems] = useState([]);
@@ -300,7 +302,13 @@ export default function FoodItemManager() {
   };
 
   const handleDelete = async (itemId) => {
-    if (window.confirm('Are you sure you want to delete this food item?')) {
+    const confirmed = await confirmDialog({
+      title: 'Delete Menu Item',
+      message: 'Are you sure you want to delete this food item? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (confirmed) {
       try {
         await axios.delete(`${API}/restaurants/${restaurantId}/food-items/${itemId}`);
         toast.success('Food item deleted successfully!');
@@ -843,6 +851,7 @@ export default function FoodItemManager() {
           </div>
         )}
       </div>
+      <ConfirmDialogUI />
     </div>
   );
 }

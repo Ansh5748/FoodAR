@@ -1,10 +1,24 @@
-import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 import { Toaster as Sonner } from "sonner"
 
-const Toaster = ({
-  ...props
-}) => {
-  const { theme = "system" } = useTheme()
+const Toaster = ({ ...props }) => {
+  const [theme, setTheme] = useState("light")
+
+  useEffect(() => {
+    // Sync with the app's own theme system (localStorage + documentElement class)
+    const getTheme = () =>
+      document.documentElement.classList.contains("dark") ? "dark" : "light"
+
+    setTheme(getTheme())
+
+    // Watch for theme changes via class mutations
+    const observer = new MutationObserver(() => setTheme(getTheme()))
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    })
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <Sonner
@@ -21,8 +35,9 @@ const Toaster = ({
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
         },
       }}
-      {...props} />
-  );
+      {...props}
+    />
+  )
 }
 
 export { Toaster }
